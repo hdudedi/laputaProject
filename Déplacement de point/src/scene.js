@@ -39,6 +39,7 @@ const point=Vector3(0, 0.3,0);
 const point0=Vector3(0, 0,0);
 const point1=Vector3(0.3, 0,0);
 const point2=Vector3(0.3, 0.3,0);
+const bouge=[];
 
 pointsABouger.push(
   point0,
@@ -47,6 +48,8 @@ pointsABouger.push(
   point,
   point0,
 );
+
+
 
 
 const material2 = new THREE.LineBasicMaterial({color:0xff0000});
@@ -129,11 +132,14 @@ function onMouseDown(event) {
 
 
     // Recherche si le clic est à l'intérieur ou non de la sphère
-    for(var obj in pointsABouger){
-      console.log(x1-obj.position.x);
-        if ( (x1-obj.position.x)*(x1-obj.position.x)+(y1-obj.position.y)*(y1-obj.position.y) < (radius+0.05)*(radius+0.05) ) {
+    for (var i=0; i < pointsABouger.length;i++){
+      const pts=pointsABouger[i];
+        if ( (x1-pts.x)*(x1-pts.x)+(y1-pts.y)*(y1-pts.y) < (radius+0.05)*(radius+0.05) ) {
             object.material.color.set(0xff0000);
-            Bool=true;
+            bouge[i]=true;
+        }
+        else{
+            bouge[i]=false;
         }
     }
 
@@ -149,7 +155,9 @@ function onMouseDown(event) {
 function onMouseUp(event) {
     object.visible=false;
     console.log('Mouse up');
-    Bool=false;
+    for (var i=0;i<bouge.length;i++){
+      bouge[i]=false;
+    }
     object.material.color.set(0xaaffff);
     render();
 }
@@ -167,20 +175,26 @@ function onMouseMove(event) {
     xstock=x1;
     ystock=y1;
 
-    if (Bool) {
-      object.visible=true;
-      const position=object.position.clone();
-      const diffpos=(new THREE.Vector3(xstock,ystock,zstock)).sub(position);
-      const matrix=new THREE.Matrix4().makeTranslation(diffpos.x,diffpos.y,diffpos.z);
-      //console.log(matrix);
+    for (var i=0;i<bouge.length;i++){
+      if (bouge[i]) {
+        const pts=pointsABouger[i]
+        //object.visible=true;
+        const position=pts.clone();
+        const diffpos=(new THREE.Vector3(xstock,ystock,zstock)).sub(position);
+        const matrix=new THREE.Matrix4().makeTranslation(diffpos.x,diffpos.y,diffpos.z);
+        console.log(matrix);
 
-      object.applyMatrix(matrix);
-      point.x=xstock;
-      point.y=ystock;
-      point.z=zstock;
-      render();
+        object.applyMatrix(matrix);
+        pts.x=xstock;
+        pts.y=ystock;
+        pts.z=zstock;
+        render();
+
+      }
+
 
     }
+
 }
 
 // Fonction appelée lors de l'appuis sur une touche du clavier
