@@ -51,7 +51,7 @@ function init3DObjects(sceneGraph,pickableObjects) {
     const extrudeGeometry = new THREE.ExtrudeBufferGeometry( curveShape, extrudeSettings );
     const extrudeObject = new THREE.Mesh( extrudeGeometry, MaterialRGB(0.9,0.9,0.9) ) ;
     sceneGraph.add( extrudeObject );
-    extrudeObject.visible=false;
+    extrudeObject.visible=true;
     extrudeObject.position.set(1,1,1);
 
 
