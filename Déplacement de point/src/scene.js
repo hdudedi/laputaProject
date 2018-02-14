@@ -28,14 +28,14 @@ sceneGraph.add(spotLight);
 //  Ajout de l'objet
 // ****************************** //
 
+//Sphère pour un point
 const radius = 0.015; // Rayon de la sphère
-const geometry = new THREE.CircleGeometry( radius,32,32 );
-const material = new THREE.MeshLambertMaterial( {color:0xaaffff} );
-const object = new THREE.Mesh( geometry, material );
-//object.position.set(new THREE.Vector3(0,0,0));
 
+
+
+//Création des points initiaux
 const pointsABouger=[];
-const point=Vector3(0, 0.3,0);
+const point3=Vector3(0, 0.3,0);
 const point0=Vector3(0, 0,0);
 const point1=Vector3(0.3, 0,0);
 const point2=Vector3(0.3, 0.3,0);
@@ -45,29 +45,28 @@ pointsABouger.push(
   point0,
   point1,
   point2,
-  point,
+  point3,
   point0,
 );
 
 
 
-
+//Création des lignes rejoignant les points
 const material2 = new THREE.LineBasicMaterial({color:0xff0000});
 const geometry2 = new THREE.Geometry();
 geometry2.vertices.push(
   point0,
   point1,
   point2,
-  point,
+  point3,
   point0,
 );
 const line=new THREE.Line(geometry2, material2);
 sceneGraph.add(line);
 
-object.position.set(point.x,point.y,0 );
-object.visible=false;
 
-sceneGraph.add(object);
+
+
 
 // ****************************** //
 //  Fonctions de rappels évènementielles
@@ -99,10 +98,9 @@ window.addEventListener('resize',onResize);
 
 
 function render() {
-
-    line.geometry.vertices[3]=point;
+    //mettre à jour la figure
     line.geometry.verticesNeedUpdate=true;
-    //sceneGraph.add(line);
+
 
 
     renderer.render(sceneGraph, camera);
@@ -114,7 +112,6 @@ render();
 let xstock=0;
 let ystock=0;
 const zstock=0;
-let Bool=false;
 
 
 // Fonction appelée lors du clic de la souris
@@ -135,7 +132,7 @@ function onMouseDown(event) {
     for (var i=0; i < pointsABouger.length;i++){
       const pts=pointsABouger[i];
         if ( (x1-pts.x)*(x1-pts.x)+(y1-pts.y)*(y1-pts.y) < (radius+0.05)*(radius+0.05) ) {
-            object.material.color.set(0xff0000);
+            //object.material.color.set(0xff0000);
             bouge[i]=true;
         }
         else{
@@ -153,12 +150,12 @@ function onMouseDown(event) {
 
 // Fonction appelée lors du relachement de la souris
 function onMouseUp(event) {
-    object.visible=false;
+    //object.visible=false;
     console.log('Mouse up');
     for (var i=0;i<bouge.length;i++){
       bouge[i]=false;
     }
-    object.material.color.set(0xaaffff);
+    //object.material.color.set(0xaaffff);
     render();
 }
 
@@ -175,16 +172,10 @@ function onMouseMove(event) {
     xstock=x1;
     ystock=y1;
 
+    //parcours des booléens associés auc points
     for (var i=0;i<bouge.length;i++){
       if (bouge[i]) {
         const pts=pointsABouger[i]
-        //object.visible=true;
-        const position=pts.clone();
-        const diffpos=(new THREE.Vector3(xstock,ystock,zstock)).sub(position);
-        const matrix=new THREE.Matrix4().makeTranslation(diffpos.x,diffpos.y,diffpos.z);
-        console.log(matrix);
-
-        object.applyMatrix(matrix);
         pts.x=xstock;
         pts.y=ystock;
         pts.z=zstock;
