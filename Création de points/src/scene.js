@@ -86,27 +86,8 @@ line2.name="edges";
 sceneGraph.add( line2 );
 
 
-const crea=false;
+var crea=false;
 
-// const cotes=primitive.Cylinder( point0, point1,0.01 );
-// //new THREE.CylinderGeometry( 5, 5, 20, 32 );
-// //
-// var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-// console.log(cotes);
-// var cylinder = new THREE.Mesh( cotes, material );
-// sceneGraph.add( cylinder );
-// const boite= new THREE.Box3();
-// boite.setFromObject(cylinder);
-// console.log(cylinder);
-// console.log(boite);
-
-// const raycaster = new THREE.Raycaster();
-// const mouse = new THREE.Vector2();
-// const pickingData={
-//   enabled:false,
-//   selectableObjects:[],
-//   selectableObject:null
-// }
 
 
 
@@ -149,42 +130,29 @@ var tabline=[];
 for (var i=0; i<pointsABouger.length-1;i++){
   var point1=pointsABouger[i];
   var point2=pointsABouger[i+1];
-  console.log(point1,point2);
-  tabline.push(new THREE.Line3(point1,point2 ));
+  var ligne=new THREE.Line3(point1,point2 )
+  tabline.push(ligne);
 }
-console.log(tabline);
+//console.log(tabline);
 
 function render() {
       //mettre à jour la figure
       line.geometry.verticesNeedUpdate=true;
-
+      line.geometry.verticesNeedUpdate = true;
+      line.geometry.elementsNeedUpdate = true;
+      line.geometry.morphTargetsNeedUpdate = true;
+      line.geometry.uvsNeedUpdate = true;
+      line.geometry.normalsNeedUpdate = true;
+      line.geometry.colorsNeedUpdate = true;
+      line.geometry.tangentsNeedUpdate = true;
+      tabline=[]
       for (var i=0; i<pointsABouger.length-1;i++){
         var point1=pointsABouger[i];
         var point2=pointsABouger[i+1];
         tabline.push(new THREE.Line3(point1,point2 ));
       }
+      //console.log(tabline);
 
-      // cylinder.geometry.groupsNeedUpdate=true;
-      // cylinder.geometry.verticesNeedUpdate = true;
-      // cylinder.geometry.elementsNeedUpdate = true;
-      // cylinder.geometry.morphTargetsNeedUpdate = true;
-      // cylinder.geometry.uvsNeedUpdate = true;
-      // cylinder.geometry.normalsNeedUpdate = true;
-      // cylinder.geometry.colorsNeedUpdate = true;
-      // cylinder.geometry.tangentsNeedUpdate = true;
-      //console.log(cylinder)
-
-      // raycaster.setFromCamera( new THREE.Vector2(xstock,ystock), camera );
-      // var intersects = raycaster.intersectObjects( sceneGraph.children );
-      // console.log(sceneGraph.children);
-      // const nbrinter=intersects.length;
-      // if(nbrinter>0){
-      //   console.log(nbrinter);
-      //   const intersection=intersects[0];
-      //   intersection.object.material.color.set( 0xffff00 );
-      //   console.log(intersection);
-      // }
-      //console.log(intersects);
 
       renderer.render(sceneGraph, camera);
 }
@@ -220,56 +188,21 @@ function onMouseDown(event) {
         }
         else{
             bouge[i]=false;
-            console.log(essai);
+            //console.log(essai);
         }
     }
 
-    //recherche si la sourie est sur un segment
+    //recherche si la souris est sur un segment
 
     for(var i=0;i<tabline.length;i++){
-      if(H==tabline[i].closestPointToPoint(H)){
-          pointsABouger=insert(pointsABouger,H,i);
-          console.log(pointsABouger);
+      var trav=tabline[i].closestPointToPoint(H)
+      console.log(trav,H,H.x==trav.x);
+      if(H.x==trav.x && H.y==trav.y && crea){
+          pointsABouger=insert(pointsABouger,H,i+1);
+          geometry2.vertices=insert(geometry2.vertices,H,i+1);
+          console.log(i,pointsABouger,geometry2.vertices,line.geometry);
       }
     }
-    console.log(pointsABouger);
-
-
-
-      // const u=Vector2(p1.y-p0.y,p0.x-p1.x);
-      // const lg2=Math.pow(u.x,2)+Math.pow(u.y,2);
-      // const lg=Math.pow(lg2,0.5);
-      // const u2=Vector2(u.x/lg,u.y/lg);
-      // //console.log(u2);
-      // const c=(-u.x*p0.x-u.y*p0.y);
-      // const dist = (u.x*x1+u.y*y1+c)/lg;
-      // console.log(dist);
-      // const c2=(-u.y*x1+u.x*y1);
-      // const U=[[u.x,u.y],[u.y,-u.x]];
-      // const b=[-c,-c2];
-      // console.log(U,b);
-      //const sol=math.usolve(U, b);
-
-      //console.log(sol);
-      // if(Math.abs(dist2)<0.1){
-      //   circle.visible=true;
-      //   const cycle2=circle.clone();
-      //   circle.position.set(H.x,H.y,H.z);
-        //circle.position.set(sol[0][0],sol[1][0]/lg,0);
-
-      //}
-
-
-    // for (var i=0; i < pointsABouger.length;i++){
-    //   const pts=pointsABouger[i];
-    //     if ( (x1-pts.x)*(x1-pts.x)+(y1-pts.y)*(y1-pts.y) < (radius+0.05)*(radius+0.05) ) {
-    //         //object.material.color.set(0xff0000);
-    //         bouge[i]=true;
-    //     }
-    //     else{
-    //         bouge[i]=false;
-    //     }
-    // }
 
 
     // MAJ de l'image
@@ -291,7 +224,6 @@ function onMouseUp(event) {
 
 // Fonction appelée lors du déplacement de la souris
 function onMouseMove(event) {
-    render();
     const xPixel = event.clientX;
     const yPixel = event.clientY;
 
@@ -325,6 +257,7 @@ function onMouseMove(event) {
     const dist2=Math.pow(dist1,0.5);
     if(Math.abs(dist2)<0.1){
       circle.visible=true;
+      crea=true;
       const cycle2=circle.clone();
       circle.position.set(H.x,H.y,H.z);
       render();
