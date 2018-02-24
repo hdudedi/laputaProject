@@ -59,35 +59,30 @@ pointsABouger.push(
 
 //Création des lignes rejoignant les points
 const material2 = new THREE.LineBasicMaterial({color:0xff0000});
-var geometry2 = new THREE.Geometry();
-geometry2.vertices.push(
+var geometry2 = [];
+geometry2.push(
   p0,
   p1,
   p2,
   p3,
   p0,
 );
-const line=new THREE.Line(geometry2, material2);
-line.name="line";
-sceneGraph.add(line);
-line.visible=true;
-//console.log(geometry2);
 
-const edges = new THREE.EdgesGeometry( line.geometry );
-//console.log(edges);
-//var box = new THREE.Box3();
-//var helper = new THREE.Box3Helper( box, 0xffff00 );
-//console.log(helper);
-//box.expandByVector ( edges );
-//var geomEdge=new THREE.BoxBufferGeometry(100,100,100);
-const line2=new THREE.Line(edges, new THREE.LineBasicMaterial({color:0xffffff}));
-line2.name="edges";
-//console.log(line2);
-sceneGraph.add( line2 );
+// const line=new THREE.Line(geometry2, material2);
+// line.name="line";
+// sceneGraph.add(line);
+//line.visible=true;
+//console.log(geometry2);
 
 
 var crea=false;
 
+var maj=false;
+
+var geom=new THREE.Geometry();
+geom.setFromPoints(geometry2);
+var line=new THREE.Line(geom,material2);
+sceneGraph.add(line);
 
 
 
@@ -137,21 +132,39 @@ for (var i=0; i<pointsABouger.length-1;i++){
 
 function render() {
       //mettre à jour la figure
-      line.geometry.verticesNeedUpdate=true;
-      line.geometry.verticesNeedUpdate = true;
-      line.geometry.elementsNeedUpdate = true;
-      line.geometry.morphTargetsNeedUpdate = true;
-      line.geometry.uvsNeedUpdate = true;
-      line.geometry.normalsNeedUpdate = true;
-      line.geometry.colorsNeedUpdate = true;
-      line.geometry.tangentsNeedUpdate = true;
-      tabline=[]
+
+      //sceneGraph.remove(line);
+
+      //var line=new THREE.Line(geometry2, material2);
+
+      // console.log(line);
+      //sceneGraph.add(line);
+      //console.log(line);
+
+      tabline=[];
       for (var i=0; i<pointsABouger.length-1;i++){
         var point1=pointsABouger[i];
         var point2=pointsABouger[i+1];
         tabline.push(new THREE.Line3(point1,point2 ));
       }
       //console.log(tabline);
+
+      var geom=new THREE.Geometry();
+      geom.setFromPoints(geometry2);
+      var pt=new THREE.Points(geom);
+      //sceneGraph.add(pt);
+
+      if(maj){
+        console.log(sceneGraph);
+        sceneGraph.remove(line);
+        line=new THREE.Line(geom,material2);
+        line.name="line";
+        sceneGraph.add(line);
+        line.geometry.verticesNeedUpdate=true;
+        console.log(sceneGraph,line);
+        maj=false;
+      }
+
 
 
       renderer.render(sceneGraph, camera);
@@ -198,9 +211,12 @@ function onMouseDown(event) {
       var trav=tabline[i].closestPointToPoint(H)
       console.log(trav,H,H.x==trav.x);
       if(H.x==trav.x && H.y==trav.y && crea){
+          H.y+=0.1;
           pointsABouger=insert(pointsABouger,H,i+1);
-          geometry2.vertices=insert(geometry2.vertices,H,i+1);
-          console.log(i,pointsABouger,geometry2.vertices,line.geometry);
+          //sceneGraph.add.push(H);
+          geometry2=insert(geometry2,H,i+1);
+          maj=true;
+          console.log(i,pointsABouger,geometry2);
       }
     }
 
