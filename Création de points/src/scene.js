@@ -79,10 +79,20 @@ var crea=false;
 
 var maj=false;
 
+//création du taleau de point qui va former la figure
 var geom=new THREE.Geometry();
 geom.setFromPoints(geometry2);
 var line=new THREE.Line(geom,material2);
 sceneGraph.add(line);
+
+//creation du tableau de lignes qui permettra dévaluer où créer les nouveaux points
+var tabline=[];
+for (var i=0; i<geometry2.length-1;i++){
+  var point1=geometry2[i];
+  var point2=geometry2[i+1];
+  var ligne=new THREE.Line3(point1,point2 )
+  tabline.push(ligne);
+}
 
 
 
@@ -121,38 +131,26 @@ const zstock=0;
 
 var H=p0;
 
-var tabline=[];
-for (var i=0; i<pointsABouger.length-1;i++){
-  var point1=pointsABouger[i];
-  var point2=pointsABouger[i+1];
-  var ligne=new THREE.Line3(point1,point2 )
-  tabline.push(ligne);
-}
+
 //console.log(tabline);
 
 function render() {
-      //mettre à jour la figure
 
-      //sceneGraph.remove(line);
-
-      //var line=new THREE.Line(geometry2, material2);
-
-      // console.log(line);
-      //sceneGraph.add(line);
-      //console.log(line);
-
+      //mise à jour du tableau de lignes
       tabline=[];
-      for (var i=0; i<pointsABouger.length-1;i++){
-        var point1=pointsABouger[i];
-        var point2=pointsABouger[i+1];
+      for (var i=0; i<geometry2.length-1;i++){
+        var point1=geometry2[i];
+        var point2=geometry2[i+1];
         tabline.push(new THREE.Line3(point1,point2 ));
       }
-      //console.log(tabline);
 
+      //mise à jour de la géometrie et création des points qui la représentent
       var geom=new THREE.Geometry();
       geom.setFromPoints(geometry2);
-      var pt=new THREE.Points(geom);
-      //sceneGraph.add(pt);
+      var pointsMaterial = new THREE.PointsMaterial( {color: 0xFF582A, size: 5, sizeAttenuation: false} );
+      //pointsMaterial.size=100;
+      var pt=new THREE.Points(geom,pointsMaterial);
+      sceneGraph.add(pt);
 
       if(maj){
         console.log(sceneGraph);
@@ -234,6 +232,8 @@ function onMouseUp(event) {
     for (var i=0;i<bouge.length;i++){
       bouge[i]=false;
     }
+
+    maj=false;
     //object.material.color.set(0xaaffff);
     render();
 }
