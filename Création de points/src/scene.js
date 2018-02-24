@@ -94,6 +94,9 @@ for (var i=0; i<geometry2.length-1;i++){
   tabline.push(ligne);
 }
 
+//création du tableau de booléens associé
+var booline=[];
+
 
 
 
@@ -131,6 +134,13 @@ const zstock=0;
 
 var H=p0;
 
+var geom=new THREE.Geometry();
+geom.setFromPoints(geometry2);
+var pointsMaterial = new THREE.PointsMaterial( {color: 0xFF582A, size: 5, sizeAttenuation: false} );
+//pointsMaterial.size=100;
+var pt=new THREE.Points(geom,pointsMaterial);
+sceneGraph.add(pt);
+
 
 //console.log(tabline);
 
@@ -145,11 +155,10 @@ function render() {
       }
 
       //mise à jour de la géometrie et création des points qui la représentent
-      var geom=new THREE.Geometry();
+      sceneGraph.remove(pt);
+      geom=new THREE.Geometry();
       geom.setFromPoints(geometry2);
-      var pointsMaterial = new THREE.PointsMaterial( {color: 0xFF582A, size: 5, sizeAttenuation: false} );
-      //pointsMaterial.size=100;
-      var pt=new THREE.Points(geom,pointsMaterial);
+      pt=new THREE.Points(geom,pointsMaterial);
       sceneGraph.add(pt);
 
       if(maj){
@@ -208,7 +217,7 @@ function onMouseDown(event) {
     for(var i=0;i<tabline.length;i++){
       var trav=tabline[i].closestPointToPoint(H)
       console.log(trav,H,H.x==trav.x);
-      if(H.x==trav.x && H.y==trav.y && crea){
+      if(H.x==trav.x && H.y==trav.y && crea && circle.visible==true){
           H.y+=0.1;
           pointsABouger=insert(pointsABouger,H,i+1);
           //sceneGraph.add.push(H);
@@ -253,33 +262,48 @@ function onMouseMove(event) {
 
     const mouse=new THREE.Vector2(x1,y1);
 
-    //parcours des booléens associés auc points
+    //parcours des booléens associés auc points, et les fait bouger le cas échéant
+    crea=true;
     for (var i=0;i<bouge.length;i++){
-      if (bouge[i]) {
-        const pts=pointsABouger[i]
-        pts.x=xstock;
-        pts.y=ystock;
-        pts.z=zstock;
-        render();
+        if (bouge[i]) {
+          const pts=pointsABouger[i]
+          pts.x=xstock;
+          pts.y=ystock;
+          pts.z=zstock;
+          render();
+          maj=false;
+        }
+    }
 
-      }
+    if(crea){
+        const li=tabline[0];
+        H=li.closestPointToPoint(Vector3(x1,y1,0),true);
+        const dist1=Math.pow(x1-H.x,2)+Math.pow(y1-H.y,2);
+        const dist2=Math.pow(dist1,0.5);
+        if(Math.abs(dist2)<0.1){
+          circle.visible=true;
+          crea=true;
+          const cycle2=circle.clone();
+          circle.position.set(H.x,H.y,H.z);
+        }
+        else{
+          circle.visible=false;
+        }
+    }
+    else{
+      circle.visible=false;
     }
 
 
+    render();
 
-    const li=tabline[0];
-    H=li.closestPointToPoint(Vector3(x1,y1,0),true);
-    const dist1=Math.pow(x1-H.x,2)+Math.pow(y1-H.y,2);
-    const dist2=Math.pow(dist1,0.5);
-    if(Math.abs(dist2)<0.1){
-      circle.visible=true;
-      crea=true;
-      const cycle2=circle.clone();
-      circle.position.set(H.x,H.y,H.z);
-      render();
+
+
+// sphère suit projection de souris si on est dans le bon rectangle.
+
       //circle.position.set(sol[0][0],sol[1][0]/lg,0);
 
-    }
+
     //render();
 
 }
