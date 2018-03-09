@@ -40,12 +40,13 @@ circle.name="circle";
 
 
 //Création des points initiaux
-var pointsABouger=[];
 const p3=Vector3(0, 0.3,0);
 const p0=Vector3(0, 0,0);
 const p1=Vector3(0.3, 0,0);
 const p2=Vector3(0.3, 0.3,0);
-//création des booléens associées au points.
+
+//points qui peuvent bouger : liste + booléens associés
+var pointsABouger=[];
 const bouge=[];
 
 pointsABouger.push(
@@ -57,8 +58,7 @@ pointsABouger.push(
 );
 
 
-//Création des lignes rejoignant les points
-const material2 = new THREE.LineBasicMaterial({color:0xff0000});
+//Liste des points contenus dans la figure
 var geometry2 = [];
 geometry2.push(
   p0,
@@ -68,24 +68,23 @@ geometry2.push(
   p0,
 );
 
-// const line=new THREE.Line(geometry2, material2);
-// line.name="line";
-// sceneGraph.add(line);
-//line.visible=true;
-//console.log(geometry2);
+//Création des lignes rejoignant les points
+const material2 = new THREE.LineBasicMaterial({color:0xff0000});
+var geom=new THREE.Geometry();
+geom.setFromPoints(geometry2);
+var line=new THREE.Line(geom,material2);
+sceneGraph.add(line);
 
 
 var crea=false;
 
 var maj=false;
 
-//création du taleau de point qui va former la figure
-var geom=new THREE.Geometry();
-geom.setFromPoints(geometry2);
-var line=new THREE.Line(geom,material2);
-sceneGraph.add(line);
+var essai=false;
 
-//creation du tableau de lignes qui permettra dévaluer où créer les nouveaux points
+
+
+//creation du tableau de lignes qui permettra d'évaluer où créer les nouveaux points
 var tabline=[];
 for (var i=0; i<geometry2.length-1;i++){
   var point1=geometry2[i];
@@ -161,16 +160,16 @@ function render() {
       pt=new THREE.Points(geom,pointsMaterial);
       sceneGraph.add(pt);
 
-      if(maj){
-        console.log(sceneGraph);
-        sceneGraph.remove(line);
-        line=new THREE.Line(geom,material2);
-        line.name="line";
-        sceneGraph.add(line);
-        line.geometry.verticesNeedUpdate=true;
-        console.log(sceneGraph,line);
-        maj=false;
-      }
+      //mise à jour de la figure
+      //console.log(sceneGraph);
+      sceneGraph.remove(line);
+      line=new THREE.Line(geom,material2);
+      line.name="line";
+      sceneGraph.add(line);
+      line.geometry.verticesNeedUpdate=true;
+      //console.log(sceneGraph,line);
+      maj=false;
+
 
 
 
@@ -198,7 +197,7 @@ function onMouseDown(event) {
 
 
     // Recherche si la souris est proche d'un des points existants
-    var essai=false;
+    essai=false;
     for (var i=0; i < pointsABouger.length;i++){
       const pts=pointsABouger[i];
         if ( (x1-pts.x)*(x1-pts.x)+(y1-pts.y)*(y1-pts.y) < (radius+0.05)*(radius+0.05) ) {
@@ -208,25 +207,26 @@ function onMouseDown(event) {
         }
         else{
             bouge[i]=false;
-            //console.log(essai);
+
         }
     }
+    console.log(essai);
 
     //recherche si la souris est sur un segment
-
-    for(var i=0;i<tabline.length;i++){
-      var trav=tabline[i].closestPointToPoint(H)
-      console.log(trav,H,H.x==trav.x);
-      if(H.x==trav.x && H.y==trav.y && crea && circle.visible==true){
-          H.y+=0.1;
-          pointsABouger=insert(pointsABouger,H,i+1);
-          //sceneGraph.add.push(H);
-          geometry2=insert(geometry2,H,i+1);
-          maj=true;
-          console.log(i,pointsABouger,geometry2);
+    if (!essai){
+        for(var i=0;i<tabline.length;i++){
+          var trav=tabline[i].closestPointToPoint(H)
+          //console.log(trav,H,H.x==trav.x);
+          if(H.x==trav.x && H.y==trav.y && crea && circle.visible==true){
+              H.y+=0.1;
+              pointsABouger=insert(pointsABouger,H,i+1);
+              //sceneGraph.add.push(H);
+              geometry2=insert(geometry2,H,i+1);
+              maj=true;
+              //console.log(i,pointsABouger,geometry2);
+          }
+        }
       }
-    }
-
 
     // MAJ de l'image
     render();
@@ -243,6 +243,7 @@ function onMouseUp(event) {
     }
 
     maj=false;
+    essai=false;
     //object.material.color.set(0xaaffff);
     render();
 }
@@ -275,6 +276,7 @@ function onMouseMove(event) {
         }
     }
 
+
     if(crea){
         const li=tabline[0];
         H=li.closestPointToPoint(Vector3(x1,y1,0),true);
@@ -292,6 +294,14 @@ function onMouseMove(event) {
     }
     else{
       circle.visible=false;
+    }
+
+    if (essai){
+      console.log(essai,circle);
+      circle.material.color.set(0x66ff66);
+    }
+    else{
+      circle.material.color.set(0xffff00);
     }
 
 
