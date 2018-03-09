@@ -81,9 +81,6 @@ var pt=new THREE.Points(geom,pointsMaterial);
 sceneGraph.add(pt);
 
 
-var crea=false;
-
-
 var pointEnSelection=false;
 
 
@@ -214,7 +211,7 @@ function onMouseDown(event) {
         for(var i=0;i<tabline.length;i++){
           var trav=tabline[i].closestPointToPoint(H)
           //console.log(trav,H,H.x==trav.x);
-          if(H.x==trav.x && H.y==trav.y && crea && circle.visible==true){
+          if(H.x==trav.x && H.y==trav.y && circle.visible==true){
               //H.y+=0.1;
               circle.material.color.set(0x66ff66);
               pointsABouger=insert(pointsABouger,H,i+1);
@@ -270,29 +267,31 @@ function onMouseMove(event) {
         }
     }
 
-    crea=true;
 
     // Parcours des lignes pour faire la projection
     //si oui, un cercle est visible
     //dans le parcours, si le cercle est déjà visible, ne le change pas de place.
-      const li=tabline[0];
-      H=li.closestPointToPoint(Vector3(x1,y1,0),true);
-      const dist1=Math.pow(x1-H.x,2)+Math.pow(y1-H.y,2);
-      const dist2=Math.pow(dist1,0.5);
-      if(Math.abs(dist2)<0.1){
-        circle.visible=true;
-        //crea=true;
-        //const cycle2=circle.clone();
-        circle.position.set(H.x,H.y,H.z);
-      }
-      else{
-        circle.visible=false;
-      }
-
-
+    var troploin=true;
+    for(var i=0;i<tabline.length;i++){
+        const li=tabline[i];
+        var proj=li.closestPointToPoint(Vector3(x1,y1,0),true);
+        const dist1=Math.pow(x1-proj.x,2)+Math.pow(y1-proj.y,2);
+        const dist2=Math.pow(dist1,0.5);
+        if(Math.abs(dist2)<0.1){
+          circle.visible=true;
+          //const cycle2=circle.clone();
+          circle.position.set(proj.x,proj.y,proj.z);
+          H=proj;
+          troploin=false;
+        }
+    }
+    if (troploin) {
+      circle.visible=false;
+    }
+    troploin=true;
 
     if (pointEnSelection){
-      console.log(pointEnSelection,circle);
+      //console.log(pointEnSelection,circle);
       circle.material.color.set(0x66ff66);
     }
     else{
