@@ -75,12 +75,16 @@ geom.setFromPoints(geometry2);
 var line=new THREE.Line(geom,material2);
 sceneGraph.add(line);
 
+//objets points visibles
+var pointsMaterial = new THREE.PointsMaterial( {color: 0xFF582A, size: 5, sizeAttenuation: false} );
+var pt=new THREE.Points(geom,pointsMaterial);
+sceneGraph.add(pt);
+
 
 var crea=false;
 
-var maj=false;
 
-var essai=false;
+var pointEnSelection=false;
 
 
 
@@ -98,6 +102,8 @@ var booline=[];
 
 
 
+//vecteur de projection
+var H=p0;
 
 
 // ****************************** //
@@ -131,17 +137,7 @@ let xstock=0;
 let ystock=0;
 const zstock=0;
 
-var H=p0;
 
-var geom=new THREE.Geometry();
-geom.setFromPoints(geometry2);
-var pointsMaterial = new THREE.PointsMaterial( {color: 0xFF582A, size: 5, sizeAttenuation: false} );
-//pointsMaterial.size=100;
-var pt=new THREE.Points(geom,pointsMaterial);
-sceneGraph.add(pt);
-
-
-//console.log(tabline);
 
 function render() {
 
@@ -168,7 +164,6 @@ function render() {
       sceneGraph.add(line);
       line.geometry.verticesNeedUpdate=true;
       //console.log(sceneGraph,line);
-      maj=false;
 
 
 
@@ -197,32 +192,34 @@ function onMouseDown(event) {
 
 
     // Recherche si la souris est proche d'un des points existants
-    essai=false;
+    pointEnSelection=false;
     for (var i=0; i < pointsABouger.length;i++){
       const pts=pointsABouger[i];
         if ( (x1-pts.x)*(x1-pts.x)+(y1-pts.y)*(y1-pts.y) < (radius+0.05)*(radius+0.05) ) {
             //object.material.color.set(0xff0000);
             bouge[i]=true;
-            essai=true;
+            pointEnSelection=true;
         }
         else{
             bouge[i]=false;
 
         }
     }
-    console.log(essai);
+    //console.log(pointEnSelection);
 
-    //recherche si la souris est sur un segment
-    if (!essai){
+    //recherche si la souris est sur un segment à partir du tableau des lignes :
+    //1) Regarde dans le tableau des lignes si le point H est sa propre projection
+    //2)Si oui, et que "crea", et que le cercle est visible, un nouveau point est crée
+    if (!pointEnSelection){
         for(var i=0;i<tabline.length;i++){
           var trav=tabline[i].closestPointToPoint(H)
           //console.log(trav,H,H.x==trav.x);
           if(H.x==trav.x && H.y==trav.y && crea && circle.visible==true){
-              H.y+=0.1;
+              //H.y+=0.1;
+              circle.material.color.set(0x66ff66);
               pointsABouger=insert(pointsABouger,H,i+1);
               //sceneGraph.add.push(H);
               geometry2=insert(geometry2,H,i+1);
-              maj=true;
               //console.log(i,pointsABouger,geometry2);
           }
         }
@@ -238,12 +235,13 @@ function onMouseDown(event) {
 function onMouseUp(event) {
     //object.visible=false;
     //console.log('Mouse up');
+    // Il n'y a plus de déplacement de point
+    pointEnSelection=false;
     for (var i=0;i<bouge.length;i++){
       bouge[i]=false;
     }
 
-    maj=false;
-    essai=false;
+
     //object.material.color.set(0xaaffff);
     render();
 }
@@ -252,7 +250,6 @@ function onMouseUp(event) {
 function onMouseMove(event) {
     const xPixel = event.clientX;
     const yPixel = event.clientY;
-
   // Conversion des coordonnées pixel en coordonnées relatives par rapport à la fenêtre (ici par rapport au canvas de rendu).
   // Les coordonnées sont comprises entre -1 et 1
     const x1 = 2*(xPixel/canvasSize)-1;
@@ -261,10 +258,8 @@ function onMouseMove(event) {
     xstock=x1;
     ystock=y1;
 
-    const mouse=new THREE.Vector2(x1,y1);
 
     //parcours des booléens associés auc points, et les fait bouger le cas échéant
-    crea=true;
     for (var i=0;i<bouge.length;i++){
         if (bouge[i]) {
           const pts=pointsABouger[i]
@@ -272,32 +267,32 @@ function onMouseMove(event) {
           pts.y=ystock;
           pts.z=zstock;
           render();
-          maj=false;
         }
     }
 
+    crea=true;
 
-    if(crea){
-        const li=tabline[0];
-        H=li.closestPointToPoint(Vector3(x1,y1,0),true);
-        const dist1=Math.pow(x1-H.x,2)+Math.pow(y1-H.y,2);
-        const dist2=Math.pow(dist1,0.5);
-        if(Math.abs(dist2)<0.1){
-          circle.visible=true;
-          crea=true;
-          const cycle2=circle.clone();
-          circle.position.set(H.x,H.y,H.z);
-        }
-        else{
-          circle.visible=false;
-        }
-    }
-    else{
-      circle.visible=false;
-    }
+    // Parcours des lignes pour faire la projection
+    //si oui, un cercle est visible
+    //dans le parcours, si le cercle est déjà visible, ne le change pas de place.
+      const li=tabline[0];
+      H=li.closestPointToPoint(Vector3(x1,y1,0),true);
+      const dist1=Math.pow(x1-H.x,2)+Math.pow(y1-H.y,2);
+      const dist2=Math.pow(dist1,0.5);
+      if(Math.abs(dist2)<0.1){
+        circle.visible=true;
+        //crea=true;
+        //const cycle2=circle.clone();
+        circle.position.set(H.x,H.y,H.z);
+      }
+      else{
+        circle.visible=false;
+      }
 
-    if (essai){
-      console.log(essai,circle);
+
+
+    if (pointEnSelection){
+      console.log(pointEnSelection,circle);
       circle.material.color.set(0x66ff66);
     }
     else{
