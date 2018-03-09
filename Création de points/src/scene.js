@@ -48,7 +48,6 @@ const p2=Vector3(0.3, 0.3,0);
 //points qui peuvent bouger : liste + booléens associés
 var pointsABouger=[];
 const bouge=[];
-
 pointsABouger.push(
   p0,
   p1,
@@ -80,7 +79,7 @@ var pointsMaterial = new THREE.PointsMaterial( {color: 0xFF582A, size: 5, sizeAt
 var pt=new THREE.Points(geom,pointsMaterial);
 sceneGraph.add(pt);
 
-
+//var utile pour voir si un point est en sélection
 var pointEnSelection=false;
 
 
@@ -101,6 +100,9 @@ var booline=[];
 
 //vecteur de projection
 var H=p0;
+
+//Var pour savoir si l'on est en train de supprimer des points
+var suppr=false;
 
 
 // ****************************** //
@@ -207,12 +209,12 @@ function onMouseDown(event) {
     //recherche si la souris est sur un segment à partir du tableau des lignes :
     //1) Regarde dans le tableau des lignes si le point H est sa propre projection
     //2)Si oui, et que "crea", et que le cercle est visible, un nouveau point est crée
-    if (!pointEnSelection){
-        for(var i=0;i<tabline.length;i++){
+    if (!pointEnSelection && !suppr){
+        for(var i=1;i<tabline.length;i++){
           var trav=tabline[i].closestPointToPoint(H)
           //console.log(trav,H,H.x==trav.x);
           if(H.x==trav.x && H.y==trav.y && circle.visible==true){
-              //H.y+=0.1;
+
               circle.material.color.set(0x66ff66);
               pointsABouger=insert(pointsABouger,H,i+1);
               //sceneGraph.add.push(H);
@@ -221,6 +223,23 @@ function onMouseDown(event) {
           }
         }
       }
+
+
+    //suppression de point
+    if(suppr){
+        for (var i=2; i < pointsABouger.length-1;i++){
+          const pts=pointsABouger[i];
+          if ( (x1-pts.x)*(x1-pts.x)+(y1-pts.y)*(y1-pts.y) < (radius+0.05)*(radius+0.05) ) {
+              console.log(pointsABouger, "supression");
+              pointsABouger.splice(i,1);
+              geometry2.splice(i,1);
+              console.log(pointsABouger);
+
+          }
+        }
+    }
+
+    suppr=false;
 
     // MAJ de l'image
     render();
@@ -259,10 +278,18 @@ function onMouseMove(event) {
     //parcours des booléens associés auc points, et les fait bouger le cas échéant
     for (var i=0;i<bouge.length;i++){
         if (bouge[i]) {
-          const pts=pointsABouger[i]
-          pts.x=xstock;
-          pts.y=ystock;
-          pts.z=zstock;
+          if(i==0 || i==1 || i==bouge.length-1){
+            const pts=pointsABouger[i]
+            pts.x=xstock;
+            pts.z=zstock;
+          }
+          else{
+            const pts=pointsABouger[i]
+            pts.x=xstock;
+            pts.y=ystock;
+          }
+
+
           render();
         }
     }
@@ -272,7 +299,7 @@ function onMouseMove(event) {
     //si oui, un cercle est visible
     //dans le parcours, si le cercle est déjà visible, ne le change pas de place.
     var troploin=true;
-    for(var i=0;i<tabline.length;i++){
+    for(var i=1;i<tabline.length;i++){
         const li=tabline[i];
         var proj=li.closestPointToPoint(Vector3(x1,y1,0),true);
         const dist1=Math.pow(x1-proj.x,2)+Math.pow(y1-proj.y,2);
@@ -298,6 +325,14 @@ function onMouseMove(event) {
       circle.material.color.set(0xffff00);
     }
 
+    //couleur du cercle
+    for (var i=0; i < pointsABouger.length;i++){
+      const pts=pointsABouger[i];
+        if ( (x1-pts.x)*(x1-pts.x)+(y1-pts.y)*(y1-pts.y) < (radius+0.05)*(radius+0.05) ) {
+          circle.material.color.set(0x66ff66);
+        }
+    }
+
 
     render();
 
@@ -316,13 +351,18 @@ function onMouseMove(event) {
 function onKeyDown(event) {
 
     const keyCode = event.code;
-    console.log("Touche ",keyCode," enfoncé");
+
+    //console.log("Touche ",keyCode," enfoncé");
+    if(event.ctrlKey){
+      suppr=true;
+    }
 }
 
 // Fonction appelée lors du relachement d'une touche du clavier
 function onKeyUp(event) {
 	const keyCode = event.code;
-	console.log("Touche ",keyCode," relaché");
+	//console.log("Touche ",keyCode," relaché");
+  suppr=false;
 }
 
 // Fonction appelée lors du redimmensionnement de la fenetre
