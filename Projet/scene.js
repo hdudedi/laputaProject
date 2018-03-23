@@ -106,6 +106,8 @@ function initGui(guiParam,sceneThreeJs) {
         Ballon: function(){ guiParam.etape = 1;  },
         Cabine: function() { guiParam.etape = 2;  },
 		Aile: function() { guiParam.etape = 3;  },
+		Save: function(){ saveScene(sceneThreeJs.sceneGraph); },
+		ExportOBJ: function(){ exportOBJ(sceneThreeJs.objects); },
     };
 
     const updateFunc = function() { updatedGui(guiParam,sceneThreeJs); };
@@ -115,6 +117,56 @@ function initGui(guiParam,sceneThreeJs) {
     gui.add( etapeType, "Ballon").onFinishChange(updateFunc);  
     gui.add( etapeType, "Cabine").onFinishChange(updateFunc);
 	gui.add( etapeType, "Aile").onFinishChange(updateFunc);
+
+	gui.add( etapeType, "Sauvegarder");
+	gui.add( etapeType, "Exporter .obj");
+}
+
+function saveScene(sceneGraph,createdObjects) {
+    download( JSON.stringify(sceneGraph), "save_scene.js" );
+}
+
+function download(text, name) {
+    var a = document.createElement("a");
+    var file = new Blob([text], {type: 'text/plain'});
+    a.href = URL.createObjectURL(file);
+    a.download = name;
+    a.click();
+}
+
+
+
+function exportOBJ(createdObjects) {
+    console.log(createdObjects);
+    let stringOBJ = "";
+    let offset = 0;
+    for( const k in createdObjects ) {
+		if(createdObjects[k]!=null){
+	        createdObjects[k].updateMatrix();
+	        const matrix = createdObjects[k].matrix;
+	        const toExport = createdObjects[k].geometry.clone();
+	        toExport.applyMatrix( matrix );
+
+	        if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
+	            const vertices = toExport.vertices;
+	            const faces = toExport.faces;
+	            for( const k in vertices ) {
+	                const v = vertices[k];
+	                stringOBJ += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
+	            }
+	            for( const k in faces  ) {
+	                const f = faces[k];
+	                // Les faces en OBJ sont indexés à partir de 1
+	                const a = f.a + 1 + offset;
+	                const b = f.b + 1 + offset;
+	                const c = f.c + 1 + offset;
+	                stringOBJ += "f "+ a+ " "+ b+ " "+ c+ "\n"
+	            }
+	            offset += vertices.length;
+	        }
+		}
+    }
+	download( stringOBJ, "save_scene.obj" );
 }
 
 // Demande le rendu de la scène 3D
@@ -174,6 +226,10 @@ function initEmptyScene(sceneThreeJs) {
 	
 	const wrapperWheel = function(event) { onWheel(event); };
     document.addEventListener( 'wheel', wrapperWheel );
+	// For Chrome
+	document.addEventListener('mousewheel', wrapperWheel);
+	// For Firefox
+	document.addEventListener('DOMMouseScroll', wrapperWheel);
 	
 	render(sceneThreeJs);
 }
@@ -887,7 +943,15 @@ function onKeyUpCabine(event) {
 }
 
 function onWheelCabine(event) {
-	//createCabine();
+	if(!moveData.ctrl){
+		var delta = event.wheelDelta ? event.wheelDelta : -event.detail;
+		if(delta>0){
+			moveData.large+=0.01;
+		}else{
+			moveData.large-=0.01;
+		}
+		createCabine();
+	}
 }
 
 function isInsidePolygon(point,line){
