@@ -62,6 +62,28 @@ const moveData = {
 	}
 };
 
+const moveData2 = {
+	pointsABouger:[],
+	bouge:[],
+	tabline:[],
+	line: null,
+	pt:null,
+	radius: 0.005,
+	circle:null,
+	pointEnSelection:false,
+	H:null,
+	ctrl:false,
+	move:false,
+	lastPos:null,
+	large:0,
+	paint:true,
+	pickingData:{
+		pickable:false,
+		point: null,
+		normal:null,
+	}
+};
+
  const guiParam = {
     etape:1,
 };
@@ -96,7 +118,13 @@ function updatedGui(guiParam,sceneThreeJs) {
 			initCabine();
 		}
 	}else if(guiParam.etape == 3){
-		
+		if(moveData2.line==null){
+			paintDatas.lengthline.visible=false;
+			sceneThreeJs.camera.position.set(0,1,0);
+			sceneThreeJs.camera.lookAt(new THREE.Vector3(0,0,0));
+			sceneThreeJs.controls.enabled=false; 
+			initAile();
+		}
 	}
 	render(sceneThreeJs);
 }
@@ -253,6 +281,8 @@ function onKeyDown(event) {
 		onKeyDownBallon(event);
 	}else if(guiParam.etape==2){
 		onKeyDownCabine(event);
+	}else if(guiParam.etape==3){
+		onKeyDownAile(event);
 	}
 }
 
@@ -261,6 +291,8 @@ function onKeyUp(event) {
 		onKeyUpBallon(event);
 	}else if(guiParam.etape==2){
 		onKeyUpCabine(event);
+	}else if(guiParam.etape==3){
+		onKeyUpAile(event);
 	}
 }
 
@@ -270,6 +302,8 @@ function onMouseDown(event) {
 		onMouseDownBallon(event);
 	}else if(guiParam.etape==2){
 		onMouseDownCabine(event);
+	}else if(guiParam.etape==3){
+		onMouseDownAile(event);
 	}
 }
 
@@ -278,6 +312,8 @@ function onMouseMove(event) {
 		onMouseMoveBallon(event);
 	}else if(guiParam.etape==2){
 		onMouseMoveCabine(event);
+	}else if(guiParam.etape==3){
+		onMouseMoveAile(event);
 	}
 }
 
@@ -286,12 +322,16 @@ function onMouseRelease(event) {
 		onMouseReleaseBallon(event);
 	}else if(guiParam.etape==2){
 		onMouseReleaseCabine(event);
+	}else if(guiParam.etape==3){
+		onMouseReleaseAile(event);
 	}
 }
 
 function onWheel(event) {
 	if(guiParam.etape==2){
 		onWheelCabine(event);
+	}else if(guiParam.etape==3){
+		onWheelAile(event);
 	}
 }
 
@@ -705,11 +745,13 @@ function initCabine(){
 		moveData.circle=circle;
 		
 		sceneThreeJs.objects[0].geometry.computeBoundingBox();
-		moveData.pointsABouger.push(new Vector3(-0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y,0));
-		moveData.pointsABouger.push(new Vector3(0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y,0));
-		moveData.pointsABouger.push(new Vector3(0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y-0.15,0));
-		moveData.pointsABouger.push(new Vector3(-0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y-0.15,0));
-		moveData.pointsABouger.push(new Vector3(-0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y,0));
+		const sizex= (sceneThreeJs.objects[0].geometry.boundingBox.max.x-sceneThreeJs.objects[0].geometry.boundingBox.min.x)/4;
+		const sizey= (sceneThreeJs.objects[0].geometry.boundingBox.max.y-sceneThreeJs.objects[0].geometry.boundingBox.min.y)/3;
+		moveData.pointsABouger.push(new Vector3(-sizex,sceneThreeJs.objects[0].geometry.boundingBox.min.y,0));
+		moveData.pointsABouger.push(new Vector3(sizex,sceneThreeJs.objects[0].geometry.boundingBox.min.y,0));
+		moveData.pointsABouger.push(new Vector3(sizex,sceneThreeJs.objects[0].geometry.boundingBox.min.y-sizey,0));
+		moveData.pointsABouger.push(new Vector3(-sizex,sceneThreeJs.objects[0].geometry.boundingBox.min.y-sizey,0));
+		moveData.pointsABouger.push(new Vector3(-sizex,sceneThreeJs.objects[0].geometry.boundingBox.min.y,0));
 		
 		const geometry2 = new THREE.Geometry();
 		geometry2.setFromPoints(moveData.pointsABouger);
@@ -947,9 +989,13 @@ function onWheelCabine(event) {
 		var delta = event.wheelDelta ? event.wheelDelta : -event.detail;
 		if(delta>0){
 			moveData.large+=0.01;
-		}else{
-			moveData.large-=0.01;
+		}else if(delta<0){
+			if(moveData.large-0.01>0){
+				moveData.large=moveData.large-0.01;
+			}
 		}
+		sceneThreeJs.sceneGraph.remove(sceneThreeJs.objects[1]);
+		sceneThreeJs.objects[1]=null;
 		createCabine();
 	}
 }
@@ -983,6 +1029,220 @@ function createCabine(){
 	sceneThreeJs.sceneGraph.remove(moveData.line);
 	sceneThreeJs.sceneGraph.remove(moveData.pt);
 	
+	render(sceneThreeJs);
+}
+
+/*----------------Ailes---------------*/
+
+function initAile(){
+	if(sceneThreeJs.objects[0]!=null && sceneThreeJs.objects[1]!=null){
+		const circle = new THREE.Mesh( new THREE.CircleGeometry( 0.01, 32 ), new THREE.MeshBasicMaterial( { color: 0xffff00 } ) );
+		sceneThreeJs.sceneGraph.add( circle );
+		circle.visible=false;
+		circle.name="circle";
+		moveData2.circle=circle;
+		
+		sceneThreeJs.objects[0].geometry.computeBoundingBox();
+		sceneThreeJs.objects[1].geometry.computeBoundingBox();
+		
+		const sizex= (sceneThreeJs.objects[0].geometry.boundingBox.max.x-sceneThreeJs.objects[0].geometry.boundingBox.min.x)/10;
+		const sizez= (sceneThreeJs.objects[0].geometry.boundingBox.max.z-sceneThreeJs.objects[0].geometry.boundingBox.min.z)*2;
+		const y = sceneThreeJs.objects[1].geometry.boundingBox.max.y;
+		moveData2.pointsABouger.push(new Vector3(-sizex,y,-sizez));
+		moveData2.pointsABouger.push(new Vector3(sizex,y,sizez));
+		moveData2.pointsABouger.push(new Vector3(sizex,y,sizez));
+		moveData2.pointsABouger.push(new Vector3(-sizex,y,-sizez));
+		moveData2.pointsABouger.push(new Vector3(-sizex,y,-sizez));
+		
+		const geometry2 = new THREE.Geometry();
+		geometry2.setFromPoints(moveData2.pointsABouger);
+		moveData2.line=new THREE.Line(geometry2, material);
+		sceneThreeJs.sceneGraph.add(moveData2.line);
+
+		const pointsMaterial = new THREE.PointsMaterial( {color: 0xFF582A, size: 5, sizeAttenuation: false} );
+		moveData2.pt = new THREE.Points(geometry2,pointsMaterial);
+		sceneThreeJs.sceneGraph.add(moveData2.pt);
+		
+		for (var i=0; i<geometry2.length-1;i++){
+			var point1=moveData2.pointsABouger[i];
+			var point2=moveData2.pointsABouger[i+1];
+			var ligne=new THREE.Line3(point1,point2);
+			moveData2.tabline.push(ligne);
+		}
+		
+		moveData2.H=moveData2.pointsABouger[0];
+		moveData2.large=0.01;
+	}
+}
+
+function onMouseDownAile(event) {
+    // Coordonnées du clic de souris en pixel
+    const xPixel = event.clientX;
+    const yPixel = event.clientY;
+	if(moveData2.paint){
+		var point = RayProj(paintDatas.xz.plane,xPixel,yPixel);
+
+		// Recherche si la souris est proche d'un des points existants
+		if(isInsidePolygon(point,moveData2.line)){
+			moveData2.move=true;
+			moveData2.lastPos=point;
+		}
+		
+		moveData2.pointEnSelection=false;
+		if(!moveData2.ctrl){
+			for (var i=0; i < moveData2.pointsABouger.length;i++){
+				const pts=moveData2.pointsABouger[i];
+				if ((point.x-pts.x)*(point.x-pts.x)+(point.y-pts.y)*(point.y-pts.y) < (moveData2.radius+0.005)*(moveData2.radius+0.005)) {
+					moveData2.bouge[i]=true;
+					moveData2.pointEnSelection=true;
+					moveData2.move=false;
+				}
+				else{
+					moveData2.bouge[i]=false;
+				}
+			}
+		}
+
+		//recherche si la souris est sur un segment à partir du tableau des lignes :
+		//1) Regarde dans le tableau des lignes si le point H est sa propre projection
+		//2)Si oui, et que le cercle est visible, un nouveau point est crée
+		if (!moveData2.pointEnSelection && !moveData2.ctrl){
+			for(var i=1;i<moveData2.tabline.length;i++){
+				var trav=moveData2.tabline[i].closestPointToPoint(moveData2.H)
+				if(moveData2.H.x==trav.x && moveData2.H.y==trav.y && moveData2.circle.visible==true){
+					moveData2.circle.material.color.set(0x66ff66);
+					moveData2.pointsABouger=insert(moveData2.pointsABouger,moveData2.H,i+1);
+					
+					var newgeometry = new THREE.Geometry();
+					newgeometry.vertices = moveData2.pointsABouger;
+					moveData2.line.geometry = newgeometry;
+					moveData2.pt.geometry = newgeometry;
+					moveData2.move=false;
+				}
+			}
+		}
+
+		//suppression de point
+		if(moveData2.ctrl){
+			for (var i=2; i < moveData2.pointsABouger.length-1;i++){
+				const pts=moveData2.pointsABouger[i];
+				if ((point.x-pts.x)*(point.x-pts.x)+(point.y-pts.y)*(point.y-pts.y) < (moveData2.radius+0.005)*(moveData2.radius+0.005) ) {
+					moveData2.pointsABouger.splice(i,1);
+					
+					var newgeometry = new THREE.Geometry();
+					newgeometry.vertices = moveData2.pointsABouger;
+					moveData2.line.geometry = newgeometry;
+					moveData2.pt.geometry = newgeometry;
+				}
+			}
+			moveData2.move=false;
+		}
+		
+		moveData2.pt.geometry.vertices=moveData2.pointsABouger;
+	}else if(!moveData2.paint && !moveData2.ctrl){
+		var point = RayProj(paintDatas.xz.plane,xPixel,yPixel);
+		if(isInsidePolygon(point,moveData2.line)){
+			moveData2.pickingData.pickable=true;
+			moveData2.lastPos=point;
+		}
+	}
+	render(sceneThreeJs);
+}
+
+function onMouseReleaseAile(event) {
+
+	moveData2.pointEnSelection=false;
+	moveData2.move=false;
+	for (var i=0;i<moveData2.bouge.length;i++){
+		moveData2.bouge[i]=false;
+	}
+	moveData2.tabline=[];
+	for (var j=0; j<moveData2.pointsABouger.length-1;j++){
+		var point1=moveData2.pointsABouger[j];
+		var point2=moveData2.pointsABouger[j+1];
+		moveData2.tabline.push(new THREE.Line3(point1,point2 ));
+	}
+	if(!moveData2.paint){
+		moveData2.pickingData.pickable=false;
+	}
+	render(sceneThreeJs);
+}
+
+function onMouseMoveAile(event) {
+    const xPixel = event.clientX;
+    const yPixel = event.clientY;
+
+	if(moveData2.paint){
+		var point = RayProj(paintDatas.xz.plane,xPixel,yPixel);
+		//parcours des booléens associés auc points
+		if(moveData2.move){
+			for(var i=0; i<moveData2.pointsABouger.length;i++){
+				var trans = new THREE.Vector3(point.x-moveData2.lastPos.x,point.y-moveData2.lastPos.y,0);
+				moveData2.pointsABouger[i].add(trans);
+			}
+			moveData2.lastPos=point;
+		}else{
+			for (var i=0;i<moveData2.bouge.length;i++){
+				if (moveData2.bouge[i]) {
+					if(i==0 || i==1 || i==moveData2.bouge.length-1){
+						moveData2.pointsABouger[i].x=point.x;
+					}
+					else{
+						moveData2.pointsABouger[i].x=point.x;
+						moveData2.pointsABouger[i].y=point.y;
+					}
+				}
+			}
+			
+			var troploin=true;
+
+			for(var i=1;i<moveData2.tabline.length;i++){
+				const li=moveData2.tabline[i];
+				var proj=li.closestPointToPoint(Vector3(point.x,point.y,0),true);
+				const dist1=Math.pow(point.x-proj.x,2)+Math.pow(point.y-proj.y,2);
+				const dist2=Math.pow(dist1,0.5);
+				if(Math.abs(dist2)<0.005){
+					moveData2.circle.visible=true;
+					moveData2.circle.position.set(proj.x,proj.y,proj.z);
+					moveData2.H=proj;
+					troploin=false;
+				}
+			}
+			
+			if (troploin) {
+				moveData2.circle.visible=false;
+			}
+			troploin=true;
+
+			if (moveData2.pointEnSelection){
+				moveData2.circle.material.color.set(0x66ff66);
+			}else{
+				moveData2.circle.material.color.set(0xffff00);
+			}
+
+			//couleur du cercle
+			for (var i=0; i < moveData2.pointsABouger.length;i++){
+				const pts=moveData2.pointsABouger[i];
+				if ( (point.c-pts.x)*(point.x-pts.x)+(point.y-pts.y)*(point.y-pts.y) < (moveData2.radius+0.005)*(moveData2.radius+0.005) ) {
+					moveData2.circle.material.color.set(0x66ff66);
+				}
+			}
+			
+		}
+		var newgeometry = new THREE.Geometry();
+		newgeometry.vertices = moveData2.pointsABouger;
+		moveData2.line.geometry = newgeometry;
+		moveData2.pt.geometry = newgeometry;
+	}else if(!moveData2.paint && moveData2.pickingData.pickable && !moveData2.ctrl){
+		var point = RayProj(paintDatas.xz.plane,xPixel,yPixel);
+		for(var i=0; i<moveData2.pointsABouger.length;i++){
+			var trans = new THREE.Vector3(point.x-moveData2.lastPos.x,point.y-moveData2.lastPos.y,0);
+			moveData2.pointsABouger[i].add(trans);
+		}
+		sceneThreeJs.objects[1].translateX(point.x-moveData2.lastPos.x);
+		sceneThreeJs.objects[1].translateY(point.y-moveData2.lastPos.y);
+		moveData2.lastPos=point;
+	}
 	render(sceneThreeJs);
 }
 
