@@ -690,15 +690,17 @@ function onMouseDownCabine(event) {
 		}
 		
 		moveData.pointEnSelection=false;
-		for (var i=0; i < moveData.pointsABouger.length;i++){
-			const pts=moveData.pointsABouger[i];
-			if ((point.x-pts.x)*(point.x-pts.x)+(point.y-pts.y)*(point.y-pts.y) < (moveData.radius+0.005)*(moveData.radius+0.005)) {
-				moveData.bouge[i]=true;
-				moveData.pointEnSelection=true;
-				moveData.move=false;
-			}
-			else{
-				moveData.bouge[i]=false;
+		if(!moveData.ctrl){
+			for (var i=0; i < moveData.pointsABouger.length;i++){
+				const pts=moveData.pointsABouger[i];
+				if ((point.x-pts.x)*(point.x-pts.x)+(point.y-pts.y)*(point.y-pts.y) < (moveData.radius+0.005)*(moveData.radius+0.005)) {
+					moveData.bouge[i]=true;
+					moveData.pointEnSelection=true;
+					moveData.move=false;
+				}
+				else{
+					moveData.bouge[i]=false;
+				}
 			}
 		}
 
@@ -739,7 +741,7 @@ function onMouseDownCabine(event) {
 		}
 		
 		moveData.pt.geometry.vertices=moveData.pointsABouger;
-	}else if(!moveData.paint && moveData.ctrl){
+	}else if(!moveData.ctrl){
 		const raycaster = new THREE.Raycaster();
 		const x =  2*xPixel/window.innerWidth-1;
         const y = -2*yPixel/window.innerHeight+1;
@@ -749,7 +751,7 @@ function onMouseDownCabine(event) {
 			moveData.pickingData.pickable=true;
 			moveData.pickingData.point=intersects[0].point.clone();
 			moveData.pickingData.normal=sceneThreeJs.camera.getWorldDirection().clone();
-			console.log("pick");
+			sceneThreeJs.controls.enabled=false;
 		}
 	}
 	render(sceneThreeJs);
@@ -768,6 +770,8 @@ function onMouseReleaseCabine(event) {
 			var point2=moveData.pointsABouger[j+1];
 			moveData.tabline.push(new THREE.Line3(point1,point2 ));
 		}
+	}else{
+		moveData.pickingData.pickable=false;
 	}
 	render(sceneThreeJs);
 }
@@ -833,14 +837,13 @@ function onMouseMoveCabine(event) {
 				}
 			}
 			
-			
 		}
 		var newgeometry = new THREE.Geometry();
 		newgeometry.vertices = moveData.pointsABouger;
 		moveData.line.geometry = newgeometry;
 		moveData.pt.geometry = newgeometry;
-	}else if(!moveData.paint && moveData.ctrl && moveData.pickingData.pickable){
-		dragAndDrop( event, sceneThreeJs.objects[0] );
+	}else if(!moveData.paint && moveData.pickingData.pickable){
+		dragAndDrop( event, sceneThreeJs.objects[1] );
 	}
 	render(sceneThreeJs);
 }
@@ -849,68 +852,73 @@ function onKeyDownCabine(event) {
     const keyCode = event.code;
     if(event.ctrlKey){
 		moveData.ctrl=true;
+		if(!moveData.paint){
+			sceneThreeJs.controls.enabled=true;
+			moveData.pickingData.pickable=false;
+		}
     }else if (event.keyCode==13) {
-		moveData.paint=false;
-		createCabine();
-		sceneThreeJs.controls.enabled=true;
+		if(sceneThreeJs.objects[1]==null){
+			moveData.paint=false;
+			createCabine();
+			moveData.pickingData.pickable=true;
+		}else{
+			//sceneThreeJs.
+		}
 	}
 }
 
 function onKeyUpCabine(event) {
 	const keyCode = event.code;
 	moveData.ctrl=false;
+	if(!moveData.paint){
+		sceneThreeJs.controls.enabled=false;
+		moveData.pickingData.pickable=true;
+	}
 }
 
 function onWheelCabine(event) {
-	createCabine();
+	//createCabine();
 }
 
 function dragAndDrop( event, object ){
 	// Gestion du drag & drop
-    if( moveData.ctrl) {
 
-		// Coordonnées de la position de la souris
-        const xPixel = event.clientX;
-        const yPixel = event.clientY;
-		
-		const x =  2*xPixel/window.innerWidth-1;
-        const y = -2*yPixel/window.innerHeight+1;
+	// Coordonnées de la position de la souris
+	const xPixel = event.clientX;
+	const yPixel = event.clientY;
+	
+	const x =  2*xPixel/window.innerWidth-1;
+	const y = -2*yPixel/window.innerHeight+1;
 
-        // Projection inverse passant du point 2D sur l'écran à un point 3D
-        const selectedPoint = Vector3(x, y, 0.5 /*valeur de z après projection*/ );
-        selectedPoint.unproject( camera );
+	// Projection inverse passant du point 2D sur l'écran à un point 3D
+	const selectedPoint = Vector3(x, y, 0.5 /*valeur de z après projection*/ );
+	selectedPoint.unproject( sceneThreeJs.camera );
 
-        // Direction du rayon passant par le point selectionné
-        const p0 = camera.position;
-        const d = selectedPoint.clone().sub( p0 );
+	// Direction du rayon passant par le point selectionné
+	const p0 = sceneThreeJs.camera.position;
+	const d = selectedPoint.clone().sub( p0 );
 
-        // Intersection entre le rayon 3D et le plan de la camera
-        const p = pickingData.selectedPlane.p;
-        const n = pickingData.selectedPlane.n;
-        // tI = <p-p0,n> / <d,n>
-        const tI = ( (p.clone().sub(p0)).dot(n) ) / ( d.dot(n) );
-        // pI = p0 + tI d
-        const pI = (d.clone().multiplyScalar(tI)).add(p0); // le point d'intersection
+	// Intersection entre le rayon 3D et le plan de la camera
+	const p = moveData.pickingData.point;
+	const n = moveData.pickingData.normal;
+	// tI = <p-p0,n> / <d,n>
+	const tI = ( (p.clone().sub(p0)).dot(n) ) / ( d.dot(n) );
+	// pI = p0 + tI d
+	const pI = (d.clone().multiplyScalar(tI)).add(p0); // le point d'intersection
 
-        // Translation à appliquer
-        const translation = pI.clone().sub( p );
+	// Translation à appliquer
+	const translation = pI.clone().sub( p );
 
-        // Translation de l'objet et de la représentation visuelle
-		if(pickingData.selectedObject.position.x+translation.x<0.375 && pickingData.selectedObject.position.x+translation.x>-0.375){
-			pickingData.selectedObject.translateX( translation.x );
-		}
-        if(pickingData.selectedObject.position.y+translation.y<0.75 && pickingData.selectedObject.position.y+translation.y>-0){
-			pickingData.selectedObject.translateY( translation.y);
-		}
-        if(pickingData.selectedObject.position.z+translation.z<0.375 && pickingData.selectedObject.position.z+translation.z>-0.375){
-			pickingData.selectedObject.translateZ( translation.z );
-		}
-
-        pickingData.selectedPlane.p.add( translation );
-
-        pickingData.visualRepresentation.sphereTranslation.visible = true;
-        pickingData.visualRepresentation.sphereTranslation.position.copy(p);
-    }
+	// Translation de l'objet et de la représentation visuelle
+	if(object.position.x+translation.x<0.375 && object.position.x+translation.x>-0.375){
+		object.translateX( translation.x );
+	}
+	if(object.position.y+translation.y<0.75 && object.position.y+translation.y>-0){
+		object.translateY( translation.y);
+	}
+	if(object.position.z+translation.z<0.375 && object.position.z+translation.z>-0.375){
+		object.translateZ( translation.z );
+	}
 }
 
 function isInsidePolygon(point,line){
