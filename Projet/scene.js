@@ -723,6 +723,7 @@ function onMouseDownCabine(event) {
 
 		//suppression de point
 		if(moveData.ctrl){
+			console.log("test");
 			for (var i=2; i < moveData.pointsABouger.length-1;i++){
 				const pts=moveData.pointsABouger[i];
 				if ((point.x-pts.x)*(point.x-pts.x)+(point.y-pts.y)*(point.y-pts.y) < (moveData.radius+0.005)*(moveData.radius+0.005) ) {
@@ -734,18 +735,21 @@ function onMouseDownCabine(event) {
 					moveData.pt.geometry = newgeometry;
 				}
 			}
+			moveData.move=false;
 		}
 		
 		moveData.pt.geometry.vertices=moveData.pointsABouger;
 	}else if(!moveData.paint && moveData.ctrl){
-		const x =  2*xPixel/screenSize.w-1;
-        const y = -2*yPixel/screenSize.h+1;
+		const raycaster = new THREE.Raycaster();
+		const x =  2*xPixel/window.innerWidth-1;
+        const y = -2*yPixel/window.innerHeight+1;
 		raycaster.setFromCamera(new THREE.Vector2(x,y),sceneThreeJs.camera);
-		const intersects = raycaster.intersectObjects( sceneThreeJs.objects[1] );
+		const intersects = raycaster.intersectObject( sceneThreeJs.objects[1] );
 		if(intersects.length>0){
 			moveData.pickingData.pickable=true;
 			moveData.pickingData.point=intersects[0].point.clone();
-			moveData.pickingData.normal=camera.getWorldDirection().clone();
+			moveData.pickingData.normal=sceneThreeJs.camera.getWorldDirection().clone();
+			console.log("pick");
 		}
 	}
 	render(sceneThreeJs);
@@ -774,7 +778,6 @@ function onMouseMoveCabine(event) {
 
 	if(moveData.paint){
 		var point = RayProj(paintDatas.xy.plane,xPixel,yPixel);
-
 		//parcours des booléens associés auc points
 		if(moveData.move){
 			for(var i=0; i<moveData.pointsABouger.length;i++){
@@ -855,9 +858,7 @@ function onKeyDownCabine(event) {
 
 function onKeyUpCabine(event) {
 	const keyCode = event.code;
-	if(event.ctrlKey){
-		moveData.ctrl=false;
-	}
+	moveData.ctrl=false;
 }
 
 function onWheelCabine(event) {
@@ -871,8 +872,9 @@ function dragAndDrop( event, object ){
 		// Coordonnées de la position de la souris
         const xPixel = event.clientX;
         const yPixel = event.clientY;
-
-        var point = RayProj(paintDatas.xy.plane,xPixel,yPixel);
+		
+		const x =  2*xPixel/window.innerWidth-1;
+        const y = -2*yPixel/window.innerHeight+1;
 
         // Projection inverse passant du point 2D sur l'écran à un point 3D
         const selectedPoint = Vector3(x, y, 0.5 /*valeur de z après projection*/ );
