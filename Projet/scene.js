@@ -672,7 +672,11 @@ function initCabine(){
 		}
 		
 		moveData.H=moveData.pointsABouger[0];
-		moveData.large=sceneThreeJs.objects[0].geometry.boundingBox.max.z-sceneThreeJs.objects[0].geometry.boundingBox.min.z-0.05;
+		if(sceneThreeJs.objects[0].geometry.boundingBox.max.z-sceneThreeJs.objects[0].geometry.boundingBox.min.z-0.05>0){
+			moveData.large=sceneThreeJs.objects[0].geometry.boundingBox.max.z-sceneThreeJs.objects[0].geometry.boundingBox.min.z-0.05;
+		}else{
+			moveData.large=sceneThreeJs.objects[0].geometry.boundingBox.max.z-sceneThreeJs.objects[0].geometry.boundingBox.min.z;
+		}
 	}
 }
 
@@ -741,36 +745,30 @@ function onMouseDownCabine(event) {
 		}
 		
 		moveData.pt.geometry.vertices=moveData.pointsABouger;
-	}else if(!moveData.ctrl){
-		const raycaster = new THREE.Raycaster();
-		const x =  2*xPixel/window.innerWidth-1;
-        const y = -2*yPixel/window.innerHeight+1;
-		raycaster.setFromCamera(new THREE.Vector2(x,y),sceneThreeJs.camera);
-		const intersects = raycaster.intersectObject( sceneThreeJs.objects[1] );
-		if(intersects.length>0){
+	}else if(!moveData.paint && !moveData.ctrl){
+		var point = RayProj(paintDatas.xy.plane,xPixel,yPixel);
+		if(isInsidePolygon(point,moveData.line)){
 			moveData.pickingData.pickable=true;
-			moveData.pickingData.point=intersects[0].point.clone();
-			moveData.pickingData.normal=sceneThreeJs.camera.getWorldDirection().clone();
-			sceneThreeJs.controls.enabled=false;
+			moveData.lastPos=point;
 		}
 	}
 	render(sceneThreeJs);
 }
 
 function onMouseReleaseCabine(event) {
-	if(moveData.paint){
-		moveData.pointEnSelection=false;
-		moveData.move=false;
-		for (var i=0;i<moveData.bouge.length;i++){
-			moveData.bouge[i]=false;
-		}
-		moveData.tabline=[];
-		for (var j=0; j<moveData.pointsABouger.length-1;j++){
-			var point1=moveData.pointsABouger[j];
-			var point2=moveData.pointsABouger[j+1];
-			moveData.tabline.push(new THREE.Line3(point1,point2 ));
-		}
-	}else{
+
+	moveData.pointEnSelection=false;
+	moveData.move=false;
+	for (var i=0;i<moveData.bouge.length;i++){
+		moveData.bouge[i]=false;
+	}
+	moveData.tabline=[];
+	for (var j=0; j<moveData.pointsABouger.length-1;j++){
+		var point1=moveData.pointsABouger[j];
+		var point2=moveData.pointsABouger[j+1];
+		moveData.tabline.push(new THREE.Line3(point1,point2 ));
+	}
+	if(!moveData.paint){
 		moveData.pickingData.pickable=false;
 	}
 	render(sceneThreeJs);
@@ -842,8 +840,16 @@ function onMouseMoveCabine(event) {
 		newgeometry.vertices = moveData.pointsABouger;
 		moveData.line.geometry = newgeometry;
 		moveData.pt.geometry = newgeometry;
-	}else if(!moveData.paint && moveData.pickingData.pickable){
-		dragAndDrop( event, sceneThreeJs.objects[1] );
+	}else if(!moveData.paint && moveData.pickingData.pickable && !moveData.ctrl){
+		var point = RayProj(paintDatas.xy.plane,xPixel,yPixel);
+		var trans = new THREE.Vector3(point.x-moveData.lastPos.x,point.y-moveData.lastPos.y,0);
+		for(var i=0; i<moveData.pointsABouger.length;i++){
+			moveData.pointsABouger[i].add(trans);
+		}
+		sceneThreeJs.objects[1].translateX(point.x-moveData.lastPos.x);
+		sceneThreeJs.objects[1].translateY(point.y-moveData.lastPos.y);
+		console.log(sceneThreeJs.objects[1].position);
+		moveData.lastPos=point;
 	}
 	render(sceneThreeJs);
 }
@@ -857,12 +863,15 @@ function onKeyDownCabine(event) {
 			moveData.pickingData.pickable=false;
 		}
     }else if (event.keyCode==13) {
-		if(sceneThreeJs.objects[1]==null){
+		if(sceneThreeJs.objects[1]===null){
 			moveData.paint=false;
 			createCabine();
-			moveData.pickingData.pickable=true;
+			moveData.pickingData.pickable=false;
 		}else{
-			//sceneThreeJs.
+			sceneThreeJs.sceneGraph.remove(sceneThreeJs.objects[0]);
+			sceneThreeJs.objects[1]=null;
+			sceneThreeJs.sceneGraph.add(moveData.line);
+			sceneThreeJs.sceneGraph.add(moveData.pt);
 		}
 	}
 }
@@ -872,53 +881,13 @@ function onKeyUpCabine(event) {
 	moveData.ctrl=false;
 	if(!moveData.paint){
 		sceneThreeJs.controls.enabled=false;
-		moveData.pickingData.pickable=true;
+		sceneThreeJs.camera.position.set(0,0,1);
+		sceneThreeJs.camera.lookAt(new THREE.Vector3(0,0,0));
 	}
 }
 
 function onWheelCabine(event) {
 	//createCabine();
-}
-
-function dragAndDrop( event, object ){
-	// Gestion du drag & drop
-
-	// Coordonnées de la position de la souris
-	const xPixel = event.clientX;
-	const yPixel = event.clientY;
-	
-	const x =  2*xPixel/window.innerWidth-1;
-	const y = -2*yPixel/window.innerHeight+1;
-
-	// Projection inverse passant du point 2D sur l'écran à un point 3D
-	const selectedPoint = Vector3(x, y, 0.5 /*valeur de z après projection*/ );
-	selectedPoint.unproject( sceneThreeJs.camera );
-
-	// Direction du rayon passant par le point selectionné
-	const p0 = sceneThreeJs.camera.position;
-	const d = selectedPoint.clone().sub( p0 );
-
-	// Intersection entre le rayon 3D et le plan de la camera
-	const p = moveData.pickingData.point;
-	const n = moveData.pickingData.normal;
-	// tI = <p-p0,n> / <d,n>
-	const tI = ( (p.clone().sub(p0)).dot(n) ) / ( d.dot(n) );
-	// pI = p0 + tI d
-	const pI = (d.clone().multiplyScalar(tI)).add(p0); // le point d'intersection
-
-	// Translation à appliquer
-	const translation = pI.clone().sub( p );
-
-	// Translation de l'objet et de la représentation visuelle
-	if(object.position.x+translation.x<0.375 && object.position.x+translation.x>-0.375){
-		object.translateX( translation.x );
-	}
-	if(object.position.y+translation.y<0.75 && object.position.y+translation.y>-0){
-		object.translateY( translation.y);
-	}
-	if(object.position.z+translation.z<0.375 && object.position.z+translation.z>-0.375){
-		object.translateZ( translation.z );
-	}
 }
 
 function isInsidePolygon(point,line){
