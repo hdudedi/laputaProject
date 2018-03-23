@@ -118,8 +118,8 @@ function initGui(guiParam,sceneThreeJs) {
     gui.add( etapeType, "Cabine").onFinishChange(updateFunc);
 	gui.add( etapeType, "Aile").onFinishChange(updateFunc);
 
-	gui.add( etapeType, "Sauvegarder");
-	gui.add( etapeType, "Exporter .obj");
+	gui.add( etapeType, "Save");
+	gui.add( etapeType, "ExportOBJ");
 }
 
 function saveScene(sceneGraph,createdObjects) {
