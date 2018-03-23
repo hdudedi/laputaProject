@@ -842,13 +842,12 @@ function onMouseMoveCabine(event) {
 		moveData.pt.geometry = newgeometry;
 	}else if(!moveData.paint && moveData.pickingData.pickable && !moveData.ctrl){
 		var point = RayProj(paintDatas.xy.plane,xPixel,yPixel);
-		var trans = new THREE.Vector3(point.x-moveData.lastPos.x,point.y-moveData.lastPos.y,0);
 		for(var i=0; i<moveData.pointsABouger.length;i++){
+			var trans = new THREE.Vector3(point.x-moveData.lastPos.x,point.y-moveData.lastPos.y,0);
 			moveData.pointsABouger[i].add(trans);
 		}
 		sceneThreeJs.objects[1].translateX(point.x-moveData.lastPos.x);
 		sceneThreeJs.objects[1].translateY(point.y-moveData.lastPos.y);
-		console.log(sceneThreeJs.objects[1].position);
 		moveData.lastPos=point;
 	}
 	render(sceneThreeJs);
@@ -868,10 +867,11 @@ function onKeyDownCabine(event) {
 			createCabine();
 			moveData.pickingData.pickable=false;
 		}else{
-			sceneThreeJs.sceneGraph.remove(sceneThreeJs.objects[0]);
+			sceneThreeJs.sceneGraph.remove(sceneThreeJs.objects[1]);
 			sceneThreeJs.objects[1]=null;
 			sceneThreeJs.sceneGraph.add(moveData.line);
 			sceneThreeJs.sceneGraph.add(moveData.pt);
+			moveData.paint=true;
 		}
 	}
 }
