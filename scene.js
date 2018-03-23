@@ -92,30 +92,108 @@ function updatedGui(guiParam,sceneThreeJs) {
 			paintDatas.lengthline.visible=false;
 			sceneThreeJs.camera.position.set(0,0,1);
 			sceneThreeJs.camera.lookAt(new THREE.Vector3(0,0,0));
-			sceneThreeJs.controls.enabled=false; 
+			sceneThreeJs.controls.enabled=false;
 			initCabine();
 		}
 	}else if(guiParam.etape == 3){
-		
+
 	}
 	render(sceneThreeJs);
 }
+
+
+
 
 function initGui(guiParam,sceneThreeJs) {
     const etapeType = {
         Ballon: function(){ guiParam.etape = 1;  },
         Cabine: function() { guiParam.etape = 2;  },
 		Aile: function() { guiParam.etape = 3;  },
+
+		//SAUVEGARDE ET EXPORT ajout de deux fonctions de sauvegarde
+		Save: function(){ saveScene(sceneThreeJs.sceneGraph); },
+		ExportOBJ: function(){ exportOBJ(sceneThreeJs.objects); },
     };
+
 
     const updateFunc = function() { updatedGui(guiParam,sceneThreeJs); };
 
     const gui = new dat.GUI();
 
-    gui.add( etapeType, "Ballon").onFinishChange(updateFunc);  
+    gui.add( etapeType, "Ballon").onFinishChange(updateFunc);
     gui.add( etapeType, "Cabine").onFinishChange(updateFunc);
-	gui.add( etapeType, "Aile").onFinishChange(updateFunc);
+		gui.add( etapeType, "Aile").onFinishChange(updateFunc);
+
+		//SAUVEGARDE ET EXPORT ajout des nouvelles interfaces
+		gui.add( etapeType, "Save");
+		gui.add( etapeType, "ExportOBJ");
 }
+
+//SAUVEGARDE ET EXPORT Ajout des trois fonctions
+function saveScene(sceneGraph,createdObjects) {
+    download( JSON.stringify(sceneGraph), "save_scene.js" );
+}
+
+function download(text, name) {
+    var a = document.createElement("a");
+    var file = new Blob([text], {type: 'text/plain'});
+    a.href = URL.createObjectURL(file);
+    a.download = name;
+    a.click();
+}
+
+function exportOBJ(createdObjects) {
+    console.log(createdObjects);
+    let stringOBJ = "";
+    let offset = 0;
+
+    for( const k in createdObjects ) {
+			if(createdObjects[k]!=null){
+
+	        // *************************************** //
+	        // Applique préalablement la matrice de transformation sur une copie des sommets du maillage
+	        // *************************************** //
+	        createdObjects[k].updateMatrix();
+	        const matrix = createdObjects[k].matrix;
+
+	        const toExport = createdObjects[k].geometry.clone();
+	        toExport.applyMatrix( matrix );
+
+
+	        // *************************************** //
+	        // Exporte les sommets et les faces
+	        // *************************************** //
+	        if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
+
+	            const vertices = toExport.vertices;
+	            const faces = toExport.faces;
+
+	            for( const k in vertices ) {
+	                const v = vertices[k];
+	                stringOBJ += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
+	            }
+
+	            for( const k in faces  ) {
+	                const f = faces[k];
+
+	                // Les faces en OBJ sont indexés à partir de 1
+	                const a = f.a + 1 + offset;
+	                const b = f.b + 1 + offset;
+	                const c = f.c + 1 + offset;
+
+	                stringOBJ += "f "+ a+ " "+ b+ " "+ c+ "\n"
+	            }
+
+	            offset += vertices.length;
+	        }
+				}
+    }
+
+    download( stringOBJ, "save_scene.obj" );
+
+}
+
+
 
 // Demande le rendu de la scène 3D
 function render( sceneThreeJs ) {
@@ -131,13 +209,13 @@ function initEmptyScene(sceneThreeJs) {
 
     sceneThreeJs.camera = sceneInit.createCamera(0,0,1);
 	sceneThreeJs.camera.lookAt(new THREE.Vector3(0,0,0));
-	
+
     sceneInit.insertAmbientLight(sceneThreeJs.sceneGraph);
     sceneInit.insertLight(sceneThreeJs.sceneGraph,Vector3(1,2,2));
 
 	sceneThreeJs.controls = new THREE.OrbitControls( sceneThreeJs.camera );
 	sceneThreeJs.controls.enabled=false;
-	
+
 	sceneThreeJs.renderer = new THREE.WebGLRenderer( { antialias: true,alpha:false } );
 	sceneThreeJs.renderer.setPixelRatio( window.devicePixelRatio );
 	sceneThreeJs.renderer.setClearColor(0xeeeeee,1.0);
@@ -147,7 +225,7 @@ function initEmptyScene(sceneThreeJs) {
 
 	const planeXYGeometry = primitive.Quadrangle(Vector3(-2,-2,0), Vector3(2,-2,0), Vector3(2,2,0), Vector3(-2,2,0));
 	paintDatas.xy.plane = new THREE.Mesh( planeXYGeometry);
-	
+
 	const planeXZGeometry = primitive.Quadrangle(Vector3(-2,0,-2), Vector3(-2,0,2), Vector3(2,0,2), Vector3(2,0,-2));
 	paintDatas.xz.plane = new THREE.Mesh( planeXZGeometry);
 
@@ -156,25 +234,25 @@ function initEmptyScene(sceneThreeJs) {
 	var line = new THREE.Line(geometry, material);
 	paintDatas.lengthline = line;
 	sceneThreeJs.sceneGraph.add(line);
-	
+
 	const wrapperMouseDown = function(event) { onMouseDown(event); };
     document.addEventListener( 'mousedown', wrapperMouseDown );
-	
+
 	const wrapperMouseMove = function(event) { onMouseMove(event); };
     document.addEventListener( 'mousemove', wrapperMouseMove );
-	
+
 	const wrapperMouseRelease = function(event) { onMouseRelease(event); };
     document.addEventListener( 'mouseup', wrapperMouseRelease );
-	
+
 	const wrapperKeyUp = function(event) { onKeyUp(event); };
     document.addEventListener( 'keyup', wrapperKeyUp );
-	
+
 	const wrapperKeyDown = function(event) { onKeyDown(event); };
     document.addEventListener( 'keydown', wrapperKeyDown );
-	
+
 	const wrapperWheel = function(event) { onWheel(event); };
     document.addEventListener( 'wheel', wrapperWheel );
-	
+
 	render(sceneThreeJs);
 }
 
@@ -267,7 +345,7 @@ function onKeyDownBallon(event){
 		if(paintData.object!=null){
 			paintData.object.geometry.center();
 			paintData.geoEx.center();
-			
+
 			paintData.object.geometry.computeBoundingBox();
 			var newgeometry = new THREE.Geometry();
 			newgeometry.vertices.push(new THREE.Vector3(-paintData.object.geometry.boundingBox.getSize().x/2, 0, 0 ),new THREE.Vector3( paintData.object.geometry.boundingBox.getSize().x/2, 0, 0 ),);
@@ -275,7 +353,7 @@ function onKeyDownBallon(event){
 		}
 		cameraPos("XZ");
 	}else if(event.keyCode==40){
-		cameraPos("XY");		
+		cameraPos("XY");
 	}else if ( event.ctrlKey ) {
 		paintDatas.paint = false;
 		sceneThreeJs.controls.enabled = true;
@@ -319,47 +397,47 @@ function onMouseDownBallon(event){
 	else{
 		var paintData = paintDatas.xz;
 	}
-	
+
 	if(paintDatas.paint){
 		// Coordonnées du clic de souris en pixel
 		const xPixel = event.clientX;
 		const yPixel = event.clientY;
 		var point = RayProj(paintData.plane,xPixel,yPixel);
-		
+
 		if(paintData.object==null || RayIntersect(point)){
-			
+
 			if(paintData.object!=null || paintDatas.view==="XY"){
 				paintDatas.mousePressed=true;
-				
+
 				var geometry = new THREE.Geometry();
 				geometry.vertices.push(point);
 				var line = new THREE.Line(geometry, material);
 				sceneThreeJs.sceneGraph.add(line);
-				
+
 				var curve = new THREE.SplineCurve([point]);
 				var pointspline = curve.getPoints(100);
 				var geometryspline = new THREE.BufferGeometry().setFromPoints(pointspline);
 				var spline = new THREE.Line(geometryspline, material);
 				sceneThreeJs.sceneGraph.add(spline);
-				
+
 				paintData.tracePoints.push(point);
 				paintData.endPoints.push(point);
-				
+
 				paintData.line=line;
 				paintData.spline=spline;
 			}else{
 				paintDatas.mousePressed=true;
-				
+
 				var geometry = new THREE.Geometry();
 				var line = new THREE.Line(geometry, material);
 				sceneThreeJs.sceneGraph.add(line);
-				
+
 				var spline = new THREE.Line(geometry, material);
 				sceneThreeJs.sceneGraph.add(spline);
-				
+
 				paintData.line=line;
 				paintData.spline=spline;
-				
+
 				paintData.side=point.z;
 			}
 			render(sceneThreeJs);
@@ -378,9 +456,9 @@ function onMouseMoveBallon(event){
 		// Coordonnées du clic de souris en pixel
 		const xPixel = event.clientX;
 		const yPixel = event.clientY;
-		
+
 		var point = RayProj(paintData.plane,xPixel,yPixel);
-		
+
 		if(paintDatas.view==="XZ"){
 			if(paintData.side*point.z<=0){
 				paintData.go=paintData.go+1;
@@ -388,45 +466,45 @@ function onMouseMoveBallon(event){
 				paintData.endPoints.push(new Vector3(point.x,0,0));
 			}
 		}
-		
+
 		if(paintData.object!=null || paintDatas.view==="XY" || paintData.go==1){
-			
+
 			paintData.tracePoints.push(point);
-			
+
 			if(paintData.endPoints.length > 3 && point.distanceTo(paintData.endPoints[0])<0.02){
-		
+
 				var newgeometry = new THREE.Geometry();
 				newgeometry.vertices.push(point);
 				paintData.line.geometry = newgeometry;
-				
+
 				paintData.endPoints.push(point);
 				if(paintDatas.view==="XZ"){
 					paintData.endPoints.unshift(new Vector3(point.x,0,-point.z));
 				}
-				
+
 				var curve = new THREE.CatmullRomCurve3(paintData.endPoints);
 				var pointspline = curve.getPoints(300*paintData.endPoints.length);
 				var geometryspline = new THREE.BufferGeometry().setFromPoints(pointspline);
 				paintData.spline.geometry = geometryspline;
-				
+
 				from2Dto3D(paintData.endPoints);
-				
+
 				paintData.tracePoints=[];
 				paintData.endPoints = [];
-				
+
 				paintDatas.mousePressed=false;
-				
+
 			}else if(paintData.tracePoints.length<paintData.lenght){
 				var line = paintData.line;
-				
+
 				var oldgeometry = line.geometry;
 				var newgeometry = new THREE.Geometry();
 				newgeometry.vertices = oldgeometry.vertices;
 				newgeometry.vertices.push(point);
 				line.geometry = newgeometry;
-				
+
 			}else if(prod_scal2cos(paintData.tracePoints[0],paintData.tracePoints[paintData.lenght/2-1],paintData.tracePoints[paintData.tracePoints.length - paintData.lenght/2-1],paintData.tracePoints[paintData.tracePoints.length-1])>0.98){
-				
+
 				var line = paintData.line;
 				var oldgeometry = line.geometry;
 				var newgeometry = new THREE.Geometry();
@@ -437,13 +515,13 @@ function onMouseMoveBallon(event){
 				if(paintData.lenght<20){
 					paintData.lenght=paintData.lenght+2;
 				}
-				
+
 			}else{
 				var line = paintData.line;
 				var newgeometry = new THREE.Geometry();
 				newgeometry.vertices.push(point);
 				line.geometry = newgeometry;
-				
+
 				paintData.endPoints.push(point);
 				if(paintDatas.view==="XZ"){
 					paintData.endPoints.unshift(new Vector3(point.x,0,-point.z));
@@ -453,22 +531,22 @@ function onMouseMoveBallon(event){
 				var pointspline = curve.getPoints(300*paintData.endPoints.length);
 				var geometryspline = new THREE.BufferGeometry().setFromPoints(pointspline);
 				paintData.spline.geometry = geometryspline;
-				
+
 				paintData.tracePoints=[];
 
 				paintData.tracePoints.push(point);
 			}
-		}else if(paintData.go==2){			
+		}else if(paintData.go==2){
 			var curve = new THREE.CatmullRomCurve3(paintData.endPoints,true);
 			var pointspline = curve.getPoints(300*paintData.endPoints.length);
 			var geometryspline = new THREE.BufferGeometry().setFromPoints(pointspline);
 			paintData.spline.geometry = geometryspline;
-				
+
 			from2Dto3D(paintData.endPoints);
-			
+
 			paintData.tracePoints=[];
 			paintData.endPoints = [];
-			
+
 			paintDatas.mousePressed=false;
 		}
 	}
@@ -482,26 +560,26 @@ function onMouseReleaseBallon(event){
 	else{
 		var paintData = paintDatas.xz;
 	}
-	
+
 	if(paintDatas.mousePressed && paintDatas.paint){
 		const xPixel = event.clientX;
 		const yPixel = event.clientY;
-		
+
 		var point = RayProj(paintData.plane,xPixel,yPixel);
-		
+
 		paintData.tracePoints.push(point);
 		paintData.endPoints.push(point);
 		if(paintDatas.view==="XZ"){
 			paintData.endPoints.unshift(new Vector3(point.x,0,0));
 		}
-		
+
 		var curve = new THREE.CatmullRomCurve3(paintData.endPoints,true);
 		var pointspline = curve.getPoints(300*paintData.endPoints.length);
 		var geometryspline = new THREE.BufferGeometry().setFromPoints(pointspline);
 		paintData.spline.geometry = geometryspline;
-		
+
 		paintDatas.mousePressed=false;
-		
+
 		if(paintData.object==null){
 			if(paintDatas.view=="XY" || paintData.go==2){
 				from2Dto3D(paintData.endPoints);
@@ -520,10 +598,10 @@ function onMouseReleaseBallon(event){
 			paintDatas.xz.side=null;
 			paintDatas.xz.go=0;
 		}
-				
+
 		paintData.endPoints = [];
 	}
-	
+
 	render(sceneThreeJs);
 }
 
@@ -538,11 +616,11 @@ function from2Dto3D(points){
 	}
 	else{
 		var paintData = paintDatas.xz;
-	}	
-	
+	}
+
 	var curve = new THREE.CatmullRomCurve3(points, true);
-	var pointspline = curve.getPoints(15*points.length);	
-    
+	var pointspline = curve.getPoints(15*points.length);
+
 	if(paintDatas.view==="XZ"){
 		//obligé car Shape ne fonctionne que sur XY...
 		const rot = new THREE.Euler(Math.PI/2, 0, 0);
@@ -553,52 +631,52 @@ function from2Dto3D(points){
 	const curveShape = new THREE.Shape(pointspline);
     const geometry = new THREE.ShapeGeometry( curveShape );
 	const extrudegeo = new THREE.ExtrudeGeometry(curveShape,{amount:1, bevelEnabled: false});
-	
+
 	if(paintData.object!=null){
 		if(paintDatas.view==="XZ"){
 			paintData.object.rotateX(Math.PI/2);
 			paintData.geoEx.rotateX(Math.PI/2);
 			paintData.geoEx.translate(0,0,paintData.geoEx.boundingBox.getSize().z/2);
 		}
-		paintData.object.updateMatrix();	
-		geometry.merge(paintData.object.geometry,paintData.object.matrix);	
+		paintData.object.updateMatrix();
+		geometry.merge(paintData.object.geometry,paintData.object.matrix);
 		paintData.object.geometry = geometry;
-		
+
 		paintData.geoEx=merge(extrudegeo,paintData.geoEx);
-	}else{	
+	}else{
 		const object = new THREE.Mesh(geometry, material);
 		paintData.object=object;
-		
+
 		paintData.geoEx=extrudegeo;
 	}
 	if(paintDatas.view==="XZ"){
 		paintData.object.rotateX(-Math.PI/2);
 		paintData.geoEx.rotateX(-Math.PI/2);
 	}
-	
+
 	if(paintDatas.view==="XZ"){
 		paintDatas.xy.object.geometry.computeBoundingBox();
 		paintData.object.geometry.computeBoundingBox();
 		const r = paintDatas.xy.object.geometry.boundingBox.getSize().x/paintDatas.xz.object.geometry.boundingBox.getSize().x
 		paintData.object.geometry.scale(r,r,1);
 		paintData.object.geometry.center();
-		
+
 		paintData.geoEx.scale(r,1,r);
 		paintData.geoEx.center();
 	}
-	
+
 	sceneThreeJs.sceneGraph.add( paintData.object );
-	
+
 	sceneThreeJs.sceneGraph.remove(paintData.line);
 	sceneThreeJs.sceneGraph.remove(paintData.spline);
-		
+
 	render(sceneThreeJs);
 }
 
 function RayProj(plane,xPixel,yPixel){
 	const x = 2*(xPixel/window.innerWidth)-1;
 	const y = 1-2*(yPixel/window.innerHeight);
-	
+
 	const raycaster = new THREE.Raycaster();
 	raycaster.setFromCamera(new THREE.Vector2(x,y), sceneThreeJs.camera);
 	var hits = raycaster.intersectObject(plane,true);
@@ -647,14 +725,14 @@ function initCabine(){
 		circle.visible=false;
 		circle.name="circle";
 		moveData.circle=circle;
-		
+
 		sceneThreeJs.objects[0].geometry.computeBoundingBox();
 		moveData.pointsABouger.push(new Vector3(-0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y,0));
 		moveData.pointsABouger.push(new Vector3(0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y,0));
 		moveData.pointsABouger.push(new Vector3(0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y-0.15,0));
 		moveData.pointsABouger.push(new Vector3(-0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y-0.15,0));
 		moveData.pointsABouger.push(new Vector3(-0.15,sceneThreeJs.objects[0].geometry.boundingBox.min.y,0));
-		
+
 		const geometry2 = new THREE.Geometry();
 		geometry2.setFromPoints(moveData.pointsABouger);
 		moveData.line=new THREE.Line(geometry2, material);
@@ -663,14 +741,14 @@ function initCabine(){
 		const pointsMaterial = new THREE.PointsMaterial( {color: 0xFF582A, size: 5, sizeAttenuation: false} );
 		moveData.pt = new THREE.Points(geometry2,pointsMaterial);
 		sceneThreeJs.sceneGraph.add(moveData.pt);
-		
+
 		for (var i=0; i<geometry2.length-1;i++){
 			var point1=moveData.pointsABouger[i];
 			var point2=moveData.pointsABouger[i+1];
 			var ligne=new THREE.Line3(point1,point2);
 			moveData.tabline.push(ligne);
 		}
-		
+
 		moveData.H=moveData.pointsABouger[0];
 		moveData.large=sceneThreeJs.objects[0].geometry.boundingBox.max.z-sceneThreeJs.objects[0].geometry.boundingBox.min.z-0.05;
 	}
@@ -688,7 +766,7 @@ function onMouseDownCabine(event) {
 			moveData.move=true;
 			moveData.lastPos=point;
 		}
-		
+
 		moveData.pointEnSelection=false;
 		if(!moveData.ctrl){
 			for (var i=0; i < moveData.pointsABouger.length;i++){
@@ -713,7 +791,7 @@ function onMouseDownCabine(event) {
 				if(moveData.H.x==trav.x && moveData.H.y==trav.y && moveData.circle.visible==true){
 					moveData.circle.material.color.set(0x66ff66);
 					moveData.pointsABouger=insert(moveData.pointsABouger,moveData.H,i+1);
-					
+
 					var newgeometry = new THREE.Geometry();
 					newgeometry.vertices = moveData.pointsABouger;
 					moveData.line.geometry = newgeometry;
@@ -730,7 +808,7 @@ function onMouseDownCabine(event) {
 				const pts=moveData.pointsABouger[i];
 				if ((point.x-pts.x)*(point.x-pts.x)+(point.y-pts.y)*(point.y-pts.y) < (moveData.radius+0.005)*(moveData.radius+0.005) ) {
 					moveData.pointsABouger.splice(i,1);
-					
+
 					var newgeometry = new THREE.Geometry();
 					newgeometry.vertices = moveData.pointsABouger;
 					moveData.line.geometry = newgeometry;
@@ -739,7 +817,7 @@ function onMouseDownCabine(event) {
 			}
 			moveData.move=false;
 		}
-		
+
 		moveData.pt.geometry.vertices=moveData.pointsABouger;
 	}else if(!moveData.ctrl){
 		const raycaster = new THREE.Raycaster();
@@ -802,7 +880,7 @@ function onMouseMoveCabine(event) {
 					}
 				}
 			}
-			
+
 			var troploin=true;
 
 			for(var i=1;i<moveData.tabline.length;i++){
@@ -817,7 +895,7 @@ function onMouseMoveCabine(event) {
 					troploin=false;
 				}
 			}
-			
+
 			if (troploin) {
 				moveData.circle.visible=false;
 			}
@@ -836,7 +914,7 @@ function onMouseMoveCabine(event) {
 					moveData.circle.material.color.set(0x66ff66);
 				}
 			}
-			
+
 		}
 		var newgeometry = new THREE.Geometry();
 		newgeometry.vertices = moveData.pointsABouger;
@@ -886,7 +964,7 @@ function dragAndDrop( event, object ){
 	// Coordonnées de la position de la souris
 	const xPixel = event.clientX;
 	const yPixel = event.clientY;
-	
+
 	const x =  2*xPixel/window.innerWidth-1;
 	const y = -2*yPixel/window.innerHeight+1;
 
@@ -944,12 +1022,12 @@ function createCabine(){
 	const extrudegeo = new THREE.ExtrudeGeometry(cabShape,{amount:moveData.large, bevelEnabled: false});
 	const object = new THREE.Mesh(extrudegeo, material);
 	object.translateZ(-moveData.large/2);
-	
+
 	sceneThreeJs.objects[1]=object;
 	sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[1]);
 	sceneThreeJs.sceneGraph.remove(moveData.line);
 	sceneThreeJs.sceneGraph.remove(moveData.pt);
-	
+
 	render(sceneThreeJs);
 }
 
