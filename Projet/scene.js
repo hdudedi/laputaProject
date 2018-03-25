@@ -1072,6 +1072,9 @@ function onKeyDownCabine(event) {
 	}else if(event.keyCode==37){
 		sceneThreeJs.camera.position.set(sceneThreeJs.camera.position.x+0.1,sceneThreeJs.camera.position.y,sceneThreeJs.camera.position.z);
 	}else if(event.keyCode==32){
+		if(sceneThreeJs.objects[2][moveData.i]===null){
+			createCabine();
+		}
 		moveData.pointsABouger=[],
 		moveData.bouge=[],
 		moveData.tabline=[],
@@ -1449,6 +1452,9 @@ function onKeyDownAile(event) {
 	}else if(event.keyCode==37){
 		sceneThreeJs.camera.position.set(sceneThreeJs.camera.position.x+0.1,sceneThreeJs.camera.position.y,sceneThreeJs.camera.position.z);
 	}else if(event.keyCode==32){
+		if(sceneThreeJs.objects[2][moveData2.i]===null){
+			createAile();
+		}
 		moveData2.pointsABouger=[],
 		moveData2.bouge=[],
 		moveData2.tabline=[],
