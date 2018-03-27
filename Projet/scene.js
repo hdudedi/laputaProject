@@ -467,6 +467,7 @@ function onKeyDownBallon(event){
 	}else if (event.keyCode==13) {
 		if(paintDatas.xy.geoEx!=null && paintDatas.xz.geoEx!=null){
 			const mesh = intersect(paintDatas.xy.geoEx,paintDatas.xz.geoEx);
+			mesh.name="ballon";
 			paintDatas.xy.object.visible=false;
 			paintDatas.xz.object.visible=false;
 			paintDatas.lengthline.visible=false;
@@ -1178,6 +1179,7 @@ function createCabine(){
 	const object = new THREE.Mesh(extrudegeo, meshmaterial);
 	object.translateZ(-moveData.large/2);
 	object.geometry.computeFaceNormals();
+	object.name="cabine";
 	
 	sceneThreeJs.objects[1][moveData.i]=object;
 	sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[1][moveData.i]);
@@ -1572,6 +1574,7 @@ function initHelice(){
 function onMouseDownHelice(event) {
 	if(!heliceData.ctrl && heliceData.ok){
 		var helice = sceneThreeJs.helice.clone();
+		helice.name="helice";
 		sceneThreeJs.objects[3][sceneThreeJs.objects[3].length-1]=helice;
 		sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[3][sceneThreeJs.objects[3].length-1]);
 		sceneThreeJs.objects[3].push(null);
