@@ -203,15 +203,15 @@ function exportOBJ(createdObjects) {
 
     for( const k in createdObjects ) {
 			for( const l in createdObjects[k] ){
-				if(createdObjects[0][k]!=null){
+				if(createdObjects[k][l]!=null){
 
 		        // *************************************** //
 		        // Applique préalablement la matrice de transformation sur une copie des sommets du maillage
 		        // *************************************** //
-		        createdObjects[0][k].updateMatrix();
-		        const matrix = createdObjects[0][k].matrix;
+		        createdObjects[k][l].updateMatrix();
+		        const matrix = createdObjects[k][l].matrix;
 
-		        const toExport = createdObjects[0][k].geometry.clone();
+		        const toExport = createdObjects[k][l].geometry.clone();
 		        toExport.applyMatrix( matrix );
 
 
@@ -309,7 +309,7 @@ function initEmptyScene(sceneThreeJs) {
     var pointspale=curvepale.getPoints(500);
     const curveShapepale = new THREE.Shape(vectorPoints2);
     const extrudeSettings2 = { amount:0.03 , bevelEnabled:false };
-    const extrudeGeometry2 = new THREE.ExtrudeBufferGeometry( curveShapepale, extrudeSettings2 );
+    const extrudeGeometry2 = new THREE.ExtrudeGeometry( curveShapepale, extrudeSettings2 );
 	const pale1 = new THREE.Mesh( extrudeGeometry2, meshmaterial)
     pale1.position.set(0,0,0.15);
 
