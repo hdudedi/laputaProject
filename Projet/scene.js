@@ -61,7 +61,8 @@ const moveData = {
 		pickable:false,
 		point: null,
 		normal:null,
-	}
+	},
+	z:0,
 };
 
 const moveData2 = {
@@ -84,7 +85,8 @@ const moveData2 = {
 		pickable:false,
 		point: null,
 		normal:null,
-	}
+	},
+	y:0,
 };
 
 const heliceData ={
@@ -148,8 +150,6 @@ function updatedGui(guiParam,sceneThreeJs) {
 	}else if(guiParam.etape == 4){
 		if(sceneThreeJs.objects[0][0]!=null){
 			paintDatas.lengthline.visible=false;
-			sceneThreeJs.camera.position.set(0,0,1);
-			sceneThreeJs.camera.lookAt(new THREE.Vector3(0,0,0));
 			sceneThreeJs.controls.enabled=false; 
 			initHelice();
 		}else{
@@ -167,6 +167,7 @@ function initGui(guiParam,sceneThreeJs) {
 		Aile: function() { guiParam.etape = 3;  },
 		Helice: function() { guiParam.etape = 4;  },
 		Save: function(){ saveScene(sceneThreeJs.sceneGraph); },
+		ExportOBJ: function(){ exportOBJ(sceneThreeJs.objects); },
 		ExportOBJ: function(){ exportOBJ(sceneThreeJs.objects); },
     };
 
@@ -193,40 +194,48 @@ function download(text, name) {
     a.href = URL.createObjectURL(file);
     a.download = name;
     a.click();
+	console.log("download");
 }
 
 function exportOBJ(createdObjects) {
+    console.log(createdObjects);
     let stringOBJ = "";
     let offset = 0;
-    for( const i in createdObjects ) {
-		for(const k in i){
-			if(createdObjects[i][k]!=null){
-				createdObjects[i][k].updateMatrix();
-				const matrix = createdObjects[i][k].matrix;
-				const toExport = createdObjects[i][k].geometry.clone();
-				toExport.applyMatrix( matrix );
 
-				if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
-					const vertices = toExport.vertices;
-					const faces = toExport.faces;
-					for( const k in vertices ) {
-						const v = vertices[k];
-						stringOBJ += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
-					}
-					for( const k in faces  ) {
-						const f = faces[k];
-						// Les faces en OBJ sont indexés à partir de 1
-						const a = f.a + 1 + offset;
-						const b = f.b + 1 + offset;
-						const c = f.c + 1 + offset;
-						stringOBJ += "f "+ a+ " "+ b+ " "+ c+ "\n"
-					}
-					offset += vertices.length;
-				}
+    for( const k in createdObjects ) {
+		for( const l in createdObjects[k] ){
+			if(createdObjects[k][l]!=null){
+				// *************************************** //
+		        // Applique préalablement la matrice de transformation sur une copie des sommets du maillage
+		        // *************************************** //
+		        createdObjects[k][l].updateMatrix();
+		        const matrix = createdObjects[k][l].matrix;
+		        const toExport = createdObjects[k][l].geometry.clone();
+		        toExport.applyMatrix( matrix );
+		        // *************************************** //
+		        // Exporte les sommets et les faces
+		        // *************************************** //
+		        if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
+		            const vertices = toExport.vertices;
+		            const faces = toExport.faces;
+		            for( const k in vertices ) {
+		                const v = vertices[k];
+		                stringOBJ += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
+		            }
+		            for( const k in faces  ) {
+		                const f = faces[k];
+		                // Les faces en OBJ sont indexés à partir de 1
+		                const a = f.a + 1 + offset;
+		                const b = f.b + 1 + offset;
+		                const c = f.c + 1 + offset;
+		                stringOBJ += "f "+ a+ " "+ b+ " "+ c+ "\n"
+		            }
+		            offset += vertices.length;
+		        }
 			}
 		}
     }
-	download( stringOBJ, "save_scene.obj" );
+    download( stringOBJ, "save_scene.obj" );
 }
 
 // Demande le rendu de la scène 3D
@@ -269,7 +278,7 @@ function initEmptyScene(sceneThreeJs) {
 	paintDatas.lengthline = line;
 	sceneThreeJs.sceneGraph.add(line);
 	
-	const cylinderGeometry = new THREE.CylinderBufferGeometry( 0.15, 0.15, 0.4, 32 );
+	const cylinderGeometry = new THREE.CylinderGeometry( 0.15, 0.15, 0.4, 32 );
     const cylinder = new THREE.Mesh( cylinderGeometry, MaterialRGB(0.9,0.9,0.9) );
     cylinder.geometry.rotateX(Math.PI/2.0);
     cylinder.position.set(0,0,0);
@@ -289,7 +298,7 @@ function initEmptyScene(sceneThreeJs) {
     var pointspale=curvepale.getPoints(500);
     const curveShapepale = new THREE.Shape(vectorPoints2);
     const extrudeSettings2 = { amount:0.03 , bevelEnabled:false };
-    const extrudeGeometry2 = new THREE.ExtrudeBufferGeometry( curveShapepale, extrudeSettings2 );
+    const extrudeGeometry2 = new THREE.ExtrudeGeometry( curveShapepale, extrudeSettings2 );
 	const pale1 = new THREE.Mesh( extrudeGeometry2, meshmaterial) 
     pale1.position.set(0,0,0.15);
 
@@ -299,12 +308,12 @@ function initEmptyScene(sceneThreeJs) {
     pale2.geometry.rotateZ(Math.PI/2.0);
     pale2.position.set(0,0,0.15);
 	
-	var group = new THREE.Object3D();
-	group.add(cylinder);
-	group.add(pale1);
-	group.add(pale2);
-	group.scale.set(0.02,0.02,0.02);
-	sceneThreeJs.helice=group;
+	cylinderGeometry.mergeMesh(pale1);
+	cylinderGeometry.mergeMesh(pale2);
+	
+	var mesh = new THREE.Mesh( cylinderGeometry, meshmaterial );
+	mesh.scale.set(0.02,0.02,0.02);
+	sceneThreeJs.helice=mesh;
 	
 	const wrapperMouseDown = function(event) { onMouseDown(event); };
     document.addEventListener( 'mousedown', wrapperMouseDown );
@@ -825,12 +834,12 @@ function initCabine(){
 		sceneThreeJs.objects[0][0].geometry.computeBoundingBox();
 		const sizex= (sceneThreeJs.objects[0][0].geometry.boundingBox.max.x-sceneThreeJs.objects[0][0].geometry.boundingBox.min.x)/4;
 		const sizey= (sceneThreeJs.objects[0][0].geometry.boundingBox.max.y-sceneThreeJs.objects[0][0].geometry.boundingBox.min.y)/3;
-		const z = sceneThreeJs.objects[0][0].geometry.boundingBox.max.z;
-		moveData.pointsABouger.push(new Vector3(-sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y,z));
-		moveData.pointsABouger.push(new Vector3(sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y,z));
-		moveData.pointsABouger.push(new Vector3(sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y-sizey,z));
-		moveData.pointsABouger.push(new Vector3(-sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y-sizey,z));
-		moveData.pointsABouger.push(new Vector3(-sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y,z));
+		moveData.z = sceneThreeJs.objects[0][0].geometry.boundingBox.max.z;
+		moveData.pointsABouger.push(new Vector3(-sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y,moveData.z));
+		moveData.pointsABouger.push(new Vector3(sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y,moveData.z));
+		moveData.pointsABouger.push(new Vector3(sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y-sizey,moveData.z));
+		moveData.pointsABouger.push(new Vector3(-sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y-sizey,moveData.z));
+		moveData.pointsABouger.push(new Vector3(-sizex,sceneThreeJs.objects[0][0].geometry.boundingBox.min.y,moveData.z));
 		
 		const geometry2 = new THREE.Geometry();
 		geometry2.setFromPoints(moveData.pointsABouger);
@@ -1129,7 +1138,7 @@ function onWheelCabine(event) {
 function isInsidePolygon(point,line){
 	if(point!=null){
 		const raycaster = new THREE.Raycaster();
-		raycaster.set(new Vector3(point.x,point.y,0),new THREE.Vector3(0,1,0));
+		raycaster.set(new Vector3(point.x,point.y,moveData.z),new THREE.Vector3(0,1,0));
 		var hits = raycaster.intersectObject(line,true);
 		return hits.length>=2;
 	}else{
@@ -1168,6 +1177,7 @@ function createCabine(){
 	const extrudegeo = new THREE.ExtrudeGeometry(cabShape,{amount:moveData.large, bevelEnabled: false});
 	const object = new THREE.Mesh(extrudegeo, meshmaterial);
 	object.translateZ(-moveData.large/2);
+	object.geometry.computeFaceNormals();
 	
 	sceneThreeJs.objects[1][moveData.i]=object;
 	sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[1][moveData.i]);
@@ -1342,7 +1352,7 @@ function onMouseMoveAile(event) {
 		}else if(point!=null){
 			for (var i=0;i<moveData2.bouge.length;i++){
 				if (moveData2.bouge[i]) {
-					if(i==0 || i==1 || i==moveData2.bouge.length-1){
+					if(i==0 || i==moveData2.bouge.length-1){
 						moveData2.pointsABouger[i].x=point.x;
 						moveData2.pointsABouger[moveData2.pointsABouger.length-i-1].x=point.x;
 					}
@@ -1537,10 +1547,12 @@ function createAile(){
 	const cabShape = new THREE.Shape(moveData2.pt.geometry.rotateX(Math.PI/2).vertices);
 	const extrudegeo = new THREE.ExtrudeGeometry(cabShape,{amount:moveData2.large, bevelEnabled: false});
 	const object = new THREE.Mesh(extrudegeo, meshmaterial);
+	object.name="aile";
 	object.translateY(-moveData.large/2);
 	object.rotateX(-Math.PI/2);
-	moveData2.pt.geometry.rotateX(-Math.PI/2)
-	
+	moveData2.pt.geometry.rotateX(-Math.PI/2);
+	object.geometry.computeFaceNormals();
+
 	sceneThreeJs.objects[2][moveData2.i]=object;
 	sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[2][moveData2.i]);
 	sceneThreeJs.sceneGraph.remove(moveData2.line);
@@ -1589,7 +1601,11 @@ function onMouseMoveHelice(event) {
 		if(intersects[0]!=null){
 			heliceData.ok=true;
 			var normal = intersects[0].face.normal;
-			var newPoint = new THREE.Vector3(intersects[0].point.x + normal.x,intersects[0].point.y + normal.y,intersects[0].point.z + normal.z);
+			if(intersects[0].object.name==="aile"){
+				var newPoint = new THREE.Vector3(intersects[0].point.x + normal.x,intersects[0].point.y + normal.z,intersects[0].point.z - normal.y);
+			}else{
+				var newPoint = new THREE.Vector3(intersects[0].point.x + normal.x,intersects[0].point.y + normal.y,intersects[0].point.z + normal.z);
+			}
 			sceneThreeJs.helice.lookAt(newPoint);
 			sceneThreeJs.helice.position.set(intersects[0].point.x,intersects[0].point.y,intersects[0].point.z);
 			sceneThreeJs.helice.visible=true;
