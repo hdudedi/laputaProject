@@ -168,7 +168,7 @@ function initGui(guiParam,sceneThreeJs) {
 		Helice: function() { guiParam.etape = 4;  },
 		Save: function(){ saveScene(sceneThreeJs.sceneGraph); },
 		ExportOBJ: function(){ exportOBJ(sceneThreeJs.objects); },
-		ExportOBJ: function(){ exportOBJ(sceneThreeJs.objects); },
+		Import: function(){ importScene(); },
     };
 
     const updateFunc = function() { updatedGui(guiParam,sceneThreeJs); };
@@ -182,10 +182,11 @@ function initGui(guiParam,sceneThreeJs) {
 
 	gui.add( etapeType, "Save");
 	gui.add( etapeType, "ExportOBJ");
+	gui.add( etapeType, "Import");
 }
 
 function saveScene(sceneGraph,createdObjects) {
-    download( JSON.stringify(sceneGraph), "save_scene.js" );
+    download( JSON.stringify(sceneGraph), "save_scene.json" );
 }
 
 function download(text, name) {
@@ -203,8 +204,10 @@ function exportOBJ(createdObjects) {
     let offset = 0;
 
     for( const k in createdObjects ) {
+		let count = 0;
 		for( const l in createdObjects[k] ){
 			if(createdObjects[k][l]!=null){
+				count++;
 				// *************************************** //
 		        // Applique préalablement la matrice de transformation sur une copie des sommets du maillage
 		        // *************************************** //
@@ -228,15 +231,37 @@ function exportOBJ(createdObjects) {
 		                const a = f.a + 1 + offset;
 		                const b = f.b + 1 + offset;
 		                const c = f.c + 1 + offset;
-		                stringOBJ += "f "+ a+ " "+ b+ " "+ c+ "\n"
+		                stringOBJ += "f "+ a+ " "+ b+ " "+ c+ "\n";
 		            }
 		            offset += vertices.length;
 		        }
 			}
 		}
     }
-    download( stringOBJ, "save_scene.obj" );
+    download( stringOBJ, "Laputa.obj" );
 }
+
+function importScene(){
+	loadJSON(function(response) {
+		// Parse JSON string into object
+		sceneThreeJs.sceneGraph = JSON.parse(response);
+		console.log(sceneThreeJs.sceneGraph);
+		render(sceneThreeJs);
+	});
+}
+
+function loadJSON(callback) {   
+    var xobj = new XMLHttpRequest();
+    xobj.overrideMimeType("application/json");
+    xobj.open('GET', 'save_scene.json', true); // Replace 'my_data' with the path to your file
+    xobj.onreadystatechange = function () {
+        if (xobj.readyState == 4 && xobj.status == "200") {
+			// Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+            callback(xobj.responseText);
+        }
+    };
+    xobj.send(null);  
+ }
 
 // Demande le rendu de la scène 3D
 function render( sceneThreeJs ) {
@@ -976,19 +1001,14 @@ function onMouseMoveCabine(event) {
 		}else if(point!=null){
 			for (var i=0;i<moveData.bouge.length;i++){
 				if (moveData.bouge[i]) {
-					if(i==0 || i==1 || i==moveData.bouge.length-1){
-						moveData.pointsABouger[i].x=point.x;
-					}
-					else{
-						moveData.pointsABouger[i].x=point.x;
-						moveData.pointsABouger[i].y=point.y;
-					}
+					moveData.pointsABouger[i].x=point.x;
+					moveData.pointsABouger[i].y=point.y;
 				}
 			}
 			
 			var troploin=true;
 
-			for(var i=1;i<moveData.tabline.length;i++){
+			for(var i=0;i<moveData.tabline.length;i++){
 				const li=moveData.tabline[i];
 				var proj=li.closestPointToPoint(Vector3(point.x,point.y,0),true);
 				const dist1=Math.pow(point.x-proj.x,2)+Math.pow(point.y-proj.y,2);
@@ -1272,11 +1292,13 @@ function onMouseDownAile(event) {
 				var trav=moveData2.tabline[i].closestPointToPoint(moveData2.H)
 				if(moveData2.H.x==trav.x && moveData2.H.z==trav.z && moveData2.circle.visible==true){
 					moveData2.circle.material.color.set(0x66ff66);
-					moveData2.pointsABouger=insert(moveData2.pointsABouger,moveData2.H,i+1);
-					if(i>moveData2.pointsABouger.length/2){
-						moveData2.pointsABouger=insert(moveData2.pointsABouger,new Vector3(moveData2.H.x,moveData2.H.y,-moveData2.H.z),moveData2.pointsABouger.length-i-4);
+					if(i>=(moveData2.pointsABouger.length-1)/2){
+						const oldLength = moveData2.pointsABouger.length;
+						moveData2.pointsABouger=insert(moveData2.pointsABouger,moveData2.H,i+1);
+						moveData2.pointsABouger=insert(moveData2.pointsABouger,new Vector3(moveData2.H.x,moveData2.H.y,-moveData2.H.z),oldLength-i-1);
 					}else{
 						moveData2.pointsABouger=insert(moveData2.pointsABouger,new Vector3(moveData2.H.x,moveData2.H.y,-moveData2.H.z),moveData2.pointsABouger.length-i-1);
+						moveData2.pointsABouger=insert(moveData2.pointsABouger,moveData2.H,i+1);
 					}
 					var newgeometry = new THREE.Geometry();
 					newgeometry.vertices = moveData2.pointsABouger;
@@ -1354,9 +1376,8 @@ function onMouseMoveAile(event) {
 		}else if(point!=null){
 			for (var i=0;i<moveData2.bouge.length;i++){
 				if (moveData2.bouge[i]) {
-					if(i==0 || i==moveData2.bouge.length-1){
-						moveData2.pointsABouger[i].x=point.x;
-						moveData2.pointsABouger[moveData2.pointsABouger.length-i-1].x=point.x;
+					if(i==0 || i==moveData2.pointsABouger.length-1 || i==(moveData2.pointsABouger.length-1)/2){
+						moveData2.pointsABouger[i].x=point.x;	
 					}
 					else{
 						moveData2.pointsABouger[i].x=point.x;
@@ -1370,7 +1391,7 @@ function onMouseMoveAile(event) {
 			
 			var troploin=true;
 
-			for(var i=1;i<moveData2.tabline.length;i++){
+			for(var i=0;i<moveData2.tabline.length;i++){
 				const li=moveData2.tabline[i];
 				var proj=li.closestPointToPoint(Vector3(point.x,0,point.z),true);
 				const dist1=Math.pow(point.x-proj.x,2)+Math.pow(point.z-proj.z,2);
