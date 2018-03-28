@@ -1549,11 +1549,21 @@ function onMouseMoveAile(event) {
 		var point = RayProj2(moveData2.y+moveData2.large,xPixel,yPixel);
 		//parcours des booléens associés auc points
 		if(moveData2.move && point!=null){
-			for(var i=0; i<moveData2.pointsABouger.length;i++){
-				var trans = new THREE.Vector3(point.x-moveData2.lastPos.x,0,0);
-				moveData2.pointsABouger[i].add(trans);
+			var point2 = RayProj3(moveData.large/2,xPixel,yPixel);
+			if(point2!=null){
+				for(var i=0; i<moveData2.pointsABouger.length;i++){
+					var trans = new THREE.Vector3(point2.x-moveData2.lastPos.x,point2.y-moveData2.lastPos.y,0);
+					moveData2.pointsABouger[i].add(trans);
+					moveData2.y=moveData2.pointsABouger[i].y;
+				}
+				moveData2.lastPos=point2;
+			}else{
+				for(var i=0; i<moveData2.pointsABouger.length;i++){
+					var trans = new THREE.Vector3(point.x-moveData2.lastPos.x,0,0);
+					moveData2.pointsABouger[i].add(trans);
+				}
+				moveData2.lastPos=point;
 			}
-			moveData2.lastPos=point;
 		}else if(point!=null){
 			for (var i=0;i<moveData2.bouge.length;i++){
 				if (moveData2.bouge[i]) {
