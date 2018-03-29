@@ -107,10 +107,11 @@ const material = new THREE.LineBasicMaterial( {color:0x000000, depthWrite: true,
 var texture_placeholder;
 
 const textureLoader = new THREE.TextureLoader();
-const tMesh = textureLoader.load( 'pictures/bois1.jpg' );
+const tMesh = textureLoader.load( 'pictures/steel5.jpg' );
 tMesh.wrapS = THREE.RepeatWrapping;
-tMesh.wrapT = THREE.RepeatWrapping;
-tMesh.repeat.set( 0.4, 1 );
+tMesh.mapping=THREE.CubeReflectionMapping;
+tMesh.wrapT = THREE.MirroredRepeatWrapping;
+tMesh.repeat.set( 0.8, 0.5 );
 const woodmaterial = new THREE.MeshPhongMaterial({map: tMesh});
 
 const tMesh2 = textureLoader.load( 'pictures/steel.jpg' );
@@ -124,6 +125,46 @@ tMesh3.wrapS = THREE.RepeatWrapping;
 tMesh3.wrapT = THREE.RepeatWrapping;
 tMesh3.repeat.set( 4, 4 );
 const black4material = new THREE.MeshPhongMaterial({map: tMesh3});
+
+const iData = {
+	  CtrlSouris:function(){},
+		TouchesDirection:function(){},
+    clicGauche:function(){},
+    flècheHaut:function(){},
+		flècheBas:function(){},
+		Entrée:function(){},
+		S:function(){},
+		CtrlZ:function(){},
+		Molette:function(){},
+		BarreEspace:function(){},
+
+
+};
+
+
+
+const guiaide = new dat.GUI();
+const f0 = guiaide.addFolder('Commandes générales');
+const f1 = guiaide.addFolder('Ballon : Liste des commandes');
+const f2 = guiaide.addFolder('Cabine etc : Liste des commandes');
+const f3 = guiaide.addFolder('Hélices : Liste des commandes');
+f0.add(iData,"CtrlSouris");
+f0.add(iData,"TouchesDirection");
+f1.add( iData,'clicGauche', );
+f1.add( iData,'flècheHaut' );
+f1.add( iData,'flècheBas' );
+f1.add( iData,'Entrée' );
+f2.add( iData,'clicGauche', );
+f2.add( iData,'S', );
+f2.add( iData,'Entrée', );
+f2.add( iData,'Molette', );
+f2.add( iData,'BarreEspace', );
+f2.add( iData,'CtrlZ', );
+//MODIFICATION
+f3.add(iData,'Molette',);
+f3.add( iData,'clicGauche', );
+f3.add( iData,'CtrlZ', );
+
 
 function init(){
 	initEmptyScene(sceneThreeJs);
@@ -297,37 +338,6 @@ function exportOBJ(createdObjects,num) {
 }
 */
 
-const iData = {
-	CtrlSouris:function(){},
-	TouchesDirection:function(){},
-    clicGauche:function(){},
-	flècheHaut:function(){},
-	flècheBas:function(){},
-	Entrée:function(){},
-	S:function(){},
-	CtrlZ:function(){},
-	Molette:function(){},
-	BarreEspace:function(){},
-};
-
-const guiaide = new dat.GUI();
-const f0 = guiaide.addFolder('Commandes générales');
-const f1 = guiaide.addFolder('Ballon : Liste des commandes');
-const f2 = guiaide.addFolder('Cabine etc : Liste des commandes');
-const f3 = guiaide.addFolder('Hélices : Liste des commandes');
-f0.add(iData,"CtrlSouris");
-f0.add(iData,"TouchesDirection");
-f1.add( iData,'clicGauche', );
-f1.add( iData,'flècheHaut' );
-f1.add( iData,'flècheBas' );
-f1.add( iData,'Entrée' );
-f2.add( iData,'clicGauche', );
-f2.add( iData,'S', );
-f2.add( iData,'Entrée', );
-f2.add( iData,'Molette', );
-f2.add( iData,'BarreEspace', );
-f2.add( iData,'CtrlZ', );
-
 function exportOBJ2(createdObjects) {
     console.log(createdObjects);
     let stringOBJ = "";
@@ -415,14 +425,14 @@ function initEmptyScene(sceneThreeJs) {
 
 	sceneThreeJs.controls = new THREE.OrbitControls( sceneThreeJs.camera );
 	sceneThreeJs.controls.enabled=false;
-	
+
 	texture_placeholder = document.createElement( 'canvas' );
 	texture_placeholder.width = 128;
 	texture_placeholder.height = 128;
 	var context = texture_placeholder.getContext( '2d' );
 	context.fillStyle = 'rgb( 200, 200, 200 )';
 	context.fillRect( 0, 0, texture_placeholder.width, texture_placeholder.height );
-	
+
 	var materials2 = [
 		loadTexture( 'pictures/ciel/px.jpg' ), // right
 		loadTexture( 'pictures/ciel/nx.jpg' ), // left
@@ -1062,7 +1072,7 @@ function onMouseDownCabine(event) {
 			moveData.move=true;
 			moveData.lastPos=point;
 		}
-		
+
 		moveData.pointEnSelection=false;
 		if(!moveData.ctrl && point!=null){
 			for (var i=0; i < moveData.pointsABouger.length;i++){
@@ -1087,7 +1097,7 @@ function onMouseDownCabine(event) {
 				if(moveData.H.x==trav.x && moveData.H.y==trav.y && moveData.circle.visible==true){
 					moveData.circle.material.color.set(0x66ff66);
 					moveData.pointsABouger=insert(moveData.pointsABouger,moveData.H,i+1);
-					
+
 					var newgeometry = new THREE.Geometry();
 					newgeometry.vertices = moveData.pointsABouger;
 					moveData.line.geometry = newgeometry;
@@ -1104,7 +1114,7 @@ function onMouseDownCabine(event) {
 					const pts=moveData.pointsABouger[i];
 					if ((point.x-pts.x)*(point.x-pts.x)+(point.y-pts.y)*(point.y-pts.y) < (moveData.radius+0.005)*(moveData.radius+0.005) ) {
 						moveData.pointsABouger.splice(i,1);
-						
+
 						var newgeometry = new THREE.Geometry();
 						newgeometry.vertices = moveData.pointsABouger;
 						moveData.line.geometry = newgeometry;
@@ -1114,7 +1124,7 @@ function onMouseDownCabine(event) {
 				moveData.move=false;
 			}
 		}
-		
+
 		moveData.pt.geometry.vertices=moveData.pointsABouger;
 		createCabine();
 	}else if(!moveData.paint && !moveData.ctrl){
@@ -1166,7 +1176,7 @@ function onMouseMoveCabine(event) {
 					moveData.pointsABouger[i].y=point.y;
 				}
 			}
-			
+
 			var troploin=true;
 
 			for(var i=0;i<moveData.tabline.length;i++){
@@ -1181,7 +1191,7 @@ function onMouseMoveCabine(event) {
 					troploin=false;
 				}
 			}
-			
+
 			if (troploin) {
 				moveData.circle.visible=false;
 			}
@@ -1204,7 +1214,7 @@ function onMouseMoveCabine(event) {
 					moveData.circle.material.color.set(0x66ff66);
 				}
 			}
-			
+
 		}
 		var newgeometry = new THREE.Geometry();
 		newgeometry.vertices = moveData.pointsABouger;
@@ -1213,7 +1223,7 @@ function onMouseMoveCabine(event) {
 		createCabine();
 	}else if(!moveData.paint && moveData.pickingData.pickable && !moveData.ctrl){
 		var point = RayProj3(moveData.large/2,xPixel,yPixel);
-		if(point!=null){			
+		if(point!=null){
 			for(var i=0; i<moveData.pointsABouger.length;i++){
 				var trans = new THREE.Vector3(point.x-moveData.lastPos.x,point.y-moveData.lastPos.y,0);
 				moveData.pointsABouger[i].add(trans);
@@ -1523,7 +1533,7 @@ function onMouseDownAile(event) {
 						}else{
 							moveData2.pointsABouger.splice(moveData2.pointsABouger.length-i-1,1);
 						}
-						
+
 						var newgeometry = new THREE.Geometry();
 						newgeometry.vertices = moveData2.pointsABouger;
 						moveData2.line.geometry = newgeometry;
@@ -1533,10 +1543,10 @@ function onMouseDownAile(event) {
 				moveData2.move=false;
 			}
 		}
-		
+
 		moveData2.pt.geometry.vertices=moveData2.pointsABouger;
 		createAile();
-		
+
 	}else if(!moveData2.paint && !moveData2.ctrl){
 		var point = RayProj2(moveData2.y+moveData2.large,xPixel,yPixel);
 		if(isInsidePolygon2(xPixel,yPixel,moveData2.object)){
@@ -1593,18 +1603,18 @@ function onMouseMoveAile(event) {
 			for (var i=0;i<moveData2.bouge.length;i++){
 				if (moveData2.bouge[i]) {
 					if(i==0 || i==moveData2.pointsABouger.length-1 || i==(moveData2.pointsABouger.length-1)/2){
-						moveData2.pointsABouger[i].x=point.x;	
+						moveData2.pointsABouger[i].x=point.x;
 					}
 					else{
 						moveData2.pointsABouger[i].x=point.x;
 						moveData2.pointsABouger[i].z=point.z;
 
 						moveData2.pointsABouger[moveData2.pointsABouger.length-i-1].x=point.x;
-						moveData2.pointsABouger[moveData2.pointsABouger.length-i-1].z=-point.z;		
+						moveData2.pointsABouger[moveData2.pointsABouger.length-i-1].z=-point.z;
 					}
 				}
 			}
-			
+
 			var troploin=true;
 
 			for(var i=0;i<moveData2.tabline.length;i++){
@@ -1619,7 +1629,7 @@ function onMouseMoveAile(event) {
 					troploin=false;
 				}
 			}
-			
+
 			if (troploin) {
 				moveData2.circle.visible=false;
 			}
@@ -1642,13 +1652,13 @@ function onMouseMoveAile(event) {
 					moveData2.circle.material.color.set(0x66ff66);
 				}
 			}
-			
+
 		}
 		var newgeometry = new THREE.Geometry();
 		newgeometry.vertices = moveData2.pointsABouger;
 		moveData2.line.geometry = newgeometry;
 		moveData2.pt.geometry = newgeometry;
-		createAile();		
+		createAile();
 	}else if(!moveData2.paint && moveData2.pickingData.pickable && !moveData2.ctrl){
 		var point = RayProj2(moveData2.y+moveData2.large,xPixel,yPixel);
 		if(point!=null){
@@ -1680,7 +1690,7 @@ function onKeyDownAile(event) {
 			sceneThreeJs.objects[2][moveData2.i]=null;
 			sceneThreeJs.objects[1].pop();
 			moveData2.paint=true;
-		}else{	
+		}else{
 			sceneThreeJs.objects[2][moveData2.i]=moveData2.object;
 			sceneThreeJs.sceneGraph.remove(moveData2.line);
 			sceneThreeJs.sceneGraph.remove(moveData2.pt);
@@ -1825,7 +1835,7 @@ function RayProj2(height,xPixel,yPixel){
 function createAile(){
 	const cabShape = new THREE.Shape(moveData2.pt.geometry.rotateX(Math.PI/2).vertices);
 	const extrudegeo = new THREE.ExtrudeGeometry(cabShape,{amount:moveData2.large, bevelEnabled: false});
-	const object = new THREE.Mesh(extrudegeo, steelmaterial);
+	const object = new THREE.Mesh(extrudegeo, woodmaterial);
 	object.name="aile";
 	object.position.set(0,0,0);
 	object.rotateX(-Math.PI/2);
