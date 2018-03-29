@@ -189,9 +189,11 @@ function initGui(guiParam,sceneThreeJs) {
         Cabine: function() { guiParam.etape = 2;  },
 		Aile: function() { guiParam.etape = 3;  },
 		Helice: function() { guiParam.etape = 4;  },
-		Save: function(){ saveScene(sceneThreeJs.sceneGraph); },
 		ExportOBJ: function(){ exportOBJ(sceneThreeJs.objects); },
-		Import: function(){ importScene(); },
+		ExportCorps: function(){ exportOBJCorps(sceneThreeJs.objects); },
+		ExportAile: function(){ exportOBJAile(sceneThreeJs.objects); },
+		ExportHelice: function(){ exportOBJHelice(sceneThreeJs.objects); },
+		Save: function(){ saveScene(); },
     };
 
     const updateFunc = function() { updatedGui(guiParam,sceneThreeJs); };
@@ -202,14 +204,16 @@ function initGui(guiParam,sceneThreeJs) {
     gui.add( etapeType, "Cabine").onFinishChange(updateFunc);
 	gui.add( etapeType, "Aile").onFinishChange(updateFunc);
 	gui.add( etapeType, "Helice").onFinishChange(updateFunc);
-
-	gui.add( etapeType, "Save");
+	
 	gui.add( etapeType, "ExportOBJ");
-	gui.add( etapeType, "Import");
+	gui.add( etapeType, "ExportCorps");
+	gui.add( etapeType, "ExportAile");
+	gui.add( etapeType, "ExportHelice");
+	gui.add( etapeType, "Save");
 }
 
-function saveScene(sceneGraph,createdObjects) {
-    download( JSON.stringify(sceneGraph), "save_scene.json" );
+function saveScene() {
+    download( JSON.stringify(sceneThreeJs.objects[0][0]), "save_scene.js" );
 }
 
 function download(text, name) {
@@ -218,7 +222,6 @@ function download(text, name) {
     a.href = URL.createObjectURL(file);
     a.download = name;
     a.click();
-	console.log("download");
 }
 
 function exportOBJ(createdObjects) {
@@ -264,13 +267,115 @@ function exportOBJ(createdObjects) {
     download( stringOBJ, "Laputa.obj" );
 }
 
-function importScene(){
-	loadJSON(function(response) {
-		// Parse JSON string into object
-		sceneThreeJs.sceneGraph = JSON.parse(response);
-		console.log(sceneThreeJs.sceneGraph);
-		render(sceneThreeJs);
-	});
+function exportOBJCorps(createdObjects) {
+    let stringOBJ1 = "";
+    let offset1 = 0;
+    for( var k=0; k<2; k++) {
+		let count = 0;
+		for( const l in createdObjects[k] ){
+			if(createdObjects[k][l]!=null){
+				count++;
+				// *************************************** //
+		        // Applique préalablement la matrice de transformation sur une copie des sommets du maillage
+		        // *************************************** //
+		        createdObjects[k][l].updateMatrix();
+		        const matrix = createdObjects[k][l].matrix;
+		        const toExport = createdObjects[k][l].geometry.clone();
+		        toExport.applyMatrix( matrix );
+		        // *************************************** //
+		        // Exporte les sommets et les faces
+		        // *************************************** //
+		        if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
+		            const vertices = toExport.vertices;
+		            const faces = toExport.faces;
+		            for( const k in vertices ) {
+		                const v = vertices[k];
+		                stringOBJ1 += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
+		            }
+		            for( const k in faces  ) {
+		                const f = faces[k];
+		                // Les faces en OBJ sont indexés à partir de 1
+		                const a = f.a + 1 + offset1;
+		                const b = f.b + 1 + offset1;
+		                const c = f.c + 1 + offset1;
+		                stringOBJ1 += "f "+ a+ " "+ b+ " "+ c+ "\n";
+		            }
+		            offset1 += vertices.length;
+		        }
+			}
+		}
+    }
+    download( stringOBJ1, "Corps.obj" );
+}
+
+function exportOBJAile(createdObjects) {
+    let stringOBJ3 = "";
+    let offset3 = 0;
+	if(createdObjects[2][0]!=null){
+		// *************************************** //
+		// Applique préalablement la matrice de transformation sur une copie des sommets du maillage
+		// *************************************** //
+		createdObjects[2][0].updateMatrix();
+		const matrix = createdObjects[2][0].matrix;
+		const toExport = createdObjects[2][0].geometry.clone();
+		toExport.applyMatrix( matrix );
+		// *************************************** //
+		// Exporte les sommets et les faces
+		// *************************************** //
+		if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
+			const vertices = toExport.vertices;
+			const faces = toExport.faces;
+			for( const k in vertices ) {
+				const v = vertices[k];
+				stringOBJ3 += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
+			}
+			for( const k in faces  ) {
+				const f = faces[k];
+				// Les faces en OBJ sont indexés à partir de 1
+				const a = f.a + 1 + offset3;
+				const b = f.b + 1 + offset3;
+				const c = f.c + 1 + offset3;
+				stringOBJ3 += "f "+ a+ " "+ b+ " "+ c+ "\n";
+			}
+			offset3 += vertices.length;
+		}
+	}
+    download( stringOBJ3, "Aile.obj" );
+}
+
+function exportOBJHelice(createdObjects) {
+	let stringOBJ3 = "";
+    let offset3 = 0;
+	if(createdObjects[3][0]!=null){
+		// *************************************** //
+		// Applique préalablement la matrice de transformation sur une copie des sommets du maillage
+		// *************************************** //
+		createdObjects[3][0].updateMatrix();
+		const matrix = createdObjects[3][0].matrix;
+		const toExport = createdObjects[3][0].geometry.clone();
+		toExport.applyMatrix( matrix );
+		// *************************************** //
+		// Exporte les sommets et les faces
+		// *************************************** //
+		if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
+			const vertices = toExport.vertices;
+			const faces = toExport.faces;
+			for( const k in vertices ) {
+				const v = vertices[k];
+				stringOBJ3 += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
+			}
+			for( const k in faces  ) {
+				const f = faces[k];
+				// Les faces en OBJ sont indexés à partir de 1
+				const a = f.a + 1 + offset3;
+				const b = f.b + 1 + offset3;
+				const c = f.c + 1 + offset3;
+				stringOBJ3 += "f "+ a+ " "+ b+ " "+ c+ "\n";
+			}
+			offset3 += vertices.length;
+		}
+	}
+    download( stringOBJ3, "Helice.obj" );
 }
 
 function loadJSON(callback) {   
@@ -1435,11 +1540,21 @@ function onMouseMoveAile(event) {
 		var point = RayProj2(moveData2.y+moveData2.large,xPixel,yPixel);
 		//parcours des booléens associés auc points
 		if(moveData2.move && point!=null){
-			for(var i=0; i<moveData2.pointsABouger.length;i++){
-				var trans = new THREE.Vector3(point.x-moveData2.lastPos.x,0,0);
-				moveData2.pointsABouger[i].add(trans);
+			var point2 = RayProj3(moveData.large/2,xPixel,yPixel);
+			if(point2!=null){
+				for(var i=0; i<moveData2.pointsABouger.length;i++){
+					var trans = new THREE.Vector3(point2.x-moveData2.lastPos.x,point2.y-moveData2.lastPos.y,0);
+					moveData2.pointsABouger[i].add(trans);
+					moveData2.y=moveData2.pointsABouger[i].y;
+				}
+				moveData2.lastPos=point2;
+			}else{
+				for(var i=0; i<moveData2.pointsABouger.length;i++){
+					var trans = new THREE.Vector3(point.x-moveData2.lastPos.x,0,0);
+					moveData2.pointsABouger[i].add(trans);
+				}
+				moveData2.lastPos=point;
 			}
-			moveData2.lastPos=point;
 		}else if(point!=null){
 			for (var i=0;i<moveData2.bouge.length;i++){
 				if (moveData2.bouge[i]) {
