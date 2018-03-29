@@ -12,6 +12,7 @@
 		<script src="lib/OrbitControls.js" defer></script>
 		<script src="lib/ThreeCSG.js" defer></script>
 		<script src="lib/primitive.js" defer></script>
+		<script src="lib/dat.gui.min.js" defer></script>
 		<script src="sceneInit.js" defer></script>
 		<script src="scene.js" defer></script>
 

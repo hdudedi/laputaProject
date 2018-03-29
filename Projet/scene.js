@@ -103,14 +103,27 @@ const heliceData ={
 };
 
 const pointsMaterial = new THREE.PointsMaterial( {color: 0xFF582A, size: 5, sizeAttenuation: false} );
-const tLoader = new THREE.TextureLoader();
-const tMesh = tLoader.load( 'pictures/bois1.jpg' );
+const material = new THREE.LineBasicMaterial( {color:0x000000, depthWrite: true, linewidth: 4});
+var texture_placeholder;
+
+const textureLoader = new THREE.TextureLoader();
+const tMesh = textureLoader.load( 'pictures/bois1.jpg' );
 tMesh.wrapS = THREE.RepeatWrapping;
 tMesh.wrapT = THREE.RepeatWrapping;
 tMesh.repeat.set( 0.4, 1 );
-const material = new THREE.MeshPhongMaterial({map: tMesh});
-//const material = new THREE.LineBasicMaterial( {color:0x000000, depthWrite: false, linewidth: 4});
-//const meshmaterial = new THREE.MeshPhongMaterial({color:0xaaffff});
+const woodmaterial = new THREE.MeshPhongMaterial({map: tMesh});
+
+const tMesh2 = textureLoader.load( 'pictures/steel.jpg' );
+tMesh2.wrapS = THREE.RepeatWrapping;
+tMesh2.wrapT = THREE.RepeatWrapping;
+tMesh2.repeat.set( 0.4, 1 );
+const steelmaterial = new THREE.MeshPhongMaterial({map: tMesh2});
+
+const tMesh3 = textureLoader.load( 'pictures/black4.jpg' );
+tMesh3.wrapS = THREE.RepeatWrapping;
+tMesh3.wrapT = THREE.RepeatWrapping;
+tMesh3.repeat.set( 4, 4 );
+const black4material = new THREE.MeshPhongMaterial({map: tMesh3});
 
 function init(){
 	initEmptyScene(sceneThreeJs);
@@ -189,9 +202,6 @@ function updatedGui(guiParam,sceneThreeJs) {
 	render(sceneThreeJs);
 }
 
-//données pour exportOBJ
-const exp=[0,1,2,3];
-
 function initGui(guiParam,sceneThreeJs) {
     const etapeType = {
         Ballon: function(){ guiParam.etape = 1;  },
@@ -200,10 +210,13 @@ function initGui(guiParam,sceneThreeJs) {
 		Helice: function() { guiParam.etape = 4;  },
 		Save: function(){ saveScene(sceneThreeJs.sceneGraph); },
 		ExportTout: function(){ exportOBJ2(sceneThreeJs.objects); },
-		ExportBallon: function(){ exportOBJ(sceneThreeJs.objects,exp[0]); },
-		ExportCabineEtGouvernail: function(){ exportOBJ(sceneThreeJs.objects,exp[1]); },
-		ExportAiles: function(){ exportOBJ(sceneThreeJs.objects,exp[2]); },
-		ExportHélices: function(){ exportOBJ(sceneThreeJs.objects,exp[3]); },
+		/*-------------------Ajout des fonctions pour faire un export pièce par pièce pour l'animation ou our la fabrication-------------*/
+		/*
+		ExportBallon: function(){ exportOBJ(sceneThreeJs.objects,0); },
+		ExportCabineEtGouvernail: function(){ exportOBJ(sceneThreeJs.objects,1); },
+		ExportAiles: function(){ exportOBJ(sceneThreeJs.objects,2); },
+		ExportHélices: function(){ exportOBJ(sceneThreeJs.objects,3); },
+		*/
 		Import: function(){ importScene(); },
     };
 
@@ -218,10 +231,10 @@ function initGui(guiParam,sceneThreeJs) {
 
 	//gui.add( etapeType, "Save");
 	gui.add( etapeType, "ExportTout");
-	gui.add( etapeType, "ExportBallon");
-	gui.add( etapeType, "ExportCabineEtGouvernail");
-	gui.add( etapeType, "ExportAiles");
-	gui.add( etapeType, "ExportHélices");
+	//gui.add( etapeType, "ExportBallon");
+	//gui.add( etapeType, "ExportCabineEtGouvernail");
+	//gui.add( etapeType, "ExportAiles");
+	//gui.add( etapeType, "ExportHélices");
 }
 
 function saveScene(sceneGraph,createdObjects) {
@@ -237,49 +250,52 @@ function download(text, name) {
 	console.log("download");
 }
 
+/*-----------------Fonction pour faire un export pièce par pièce pour l'animation ou pour la fabrication-------------------*/
+/*
 function exportOBJ(createdObjects,num) {
     console.log(createdObjects);
     let stringOBJ = "";
     let offset = 0;
 
     const k=num;
-		let count = 0;
-		console.log(k, createdObjects[k]);
-		for( const l in createdObjects[k] ){
-			if(createdObjects[k][l]!=null){
-				count++;
-				// *************************************** //
-		        // Applique préalablement la matrice de transformation sur une copie des sommets du maillage
-		        // *************************************** //
-		        createdObjects[k][l].updateMatrix();
-		        const matrix = createdObjects[k][l].matrix;
-		        const toExport = createdObjects[k][l].geometry.clone();
-		        toExport.applyMatrix( matrix );
-		        // *************************************** //
-		        // Exporte les sommets et les faces
-		        // *************************************** //
-		        if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
-		            const vertices = toExport.vertices;
-		            const faces = toExport.faces;
-		            for( const k in vertices ) {
-		                const v = vertices[k];
-		                stringOBJ += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
-		            }
-		            for( const k in faces  ) {
-		                const f = faces[k];
-		                // Les faces en OBJ sont indexés à partir de 1
-		                const a = f.a + 1 + offset;
-		                const b = f.b + 1 + offset;
-		                const c = f.c + 1 + offset;
-		                stringOBJ += "f "+ a+ " "+ b+ " "+ c+ "\n";
-		            }
-		            offset += vertices.length;
-		        }
+	let count = 0;
+	console.log(k, createdObjects[k]);
+	for( const l in createdObjects[k] ){
+		if(createdObjects[k][l]!=null){
+			count++;
+			// *************************************** //
+			// Applique préalablement la matrice de transformation sur une copie des sommets du maillage
+			// *************************************** //
+			createdObjects[k][l].updateMatrix();
+			const matrix = createdObjects[k][l].matrix;
+			const toExport = createdObjects[k][l].geometry.clone();
+			toExport.applyMatrix( matrix );
+			// *************************************** //
+			// Exporte les sommets et les faces
+			// *************************************** //
+			if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
+				const vertices = toExport.vertices;
+				const faces = toExport.faces;
+				for( const k in vertices ) {
+					const v = vertices[k];
+					stringOBJ += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
+				}
+				for( const k in faces  ) {
+					const f = faces[k];
+					// Les faces en OBJ sont indexés à partir de 1
+					const a = f.a + 1 + offset;
+					const b = f.b + 1 + offset;
+					const c = f.c + 1 + offset;
+					stringOBJ += "f "+ a+ " "+ b+ " "+ c+ "\n";
+				}
+				offset += vertices.length;
 			}
 		}
+	}
 
     download( stringOBJ, "Laputa.obj" );
 }
+*/
 
 function exportOBJ2(createdObjects) {
     console.log(createdObjects);
@@ -334,22 +350,22 @@ function importScene(){
 	});
 }
 
-function loadJSON(callback) {
-    var xobj = new XMLHttpRequest();
-    xobj.overrideMimeType("application/json");
-    xobj.open('GET', 'save_scene.json', true); // Replace 'my_data' with the path to your file
-    xobj.onreadystatechange = function () {
-        if (xobj.readyState == 4 && xobj.status == "200") {
-			// Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
-            callback(xobj.responseText);
-        }
-    };
-    xobj.send(null);
- }
-
 // Demande le rendu de la scène 3D
 function render( sceneThreeJs ) {
     sceneThreeJs.renderer.render(sceneThreeJs.sceneGraph, sceneThreeJs.camera);
+}
+
+function loadTexture( path ) {
+	var texture = new THREE.Texture( texture_placeholder );
+	var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: 0.5 } );
+
+	var image = new Image();
+	image.onload = function () {
+		texture.image = this;
+		texture.needsUpdate = true;
+	};
+	image.src = path;
+	return material;
 }
 
 // Fonction d'initialisation d'une scène 3D sans objets 3D
@@ -358,18 +374,37 @@ function render( sceneThreeJs ) {
 function initEmptyScene(sceneThreeJs) {
 
     sceneThreeJs.sceneGraph = new THREE.Scene();
-		const textureLoaderback = new THREE.TextureLoader();
-    const textureBackGround = textureLoaderback.load( 'pictures/fond5.jpg' );
-    sceneThreeJs.sceneGraph.background=textureBackGround;
 
     sceneThreeJs.camera = sceneInit.createCamera(0,0,1);
 	sceneThreeJs.camera.lookAt(new THREE.Vector3(0,0,0));
 
     sceneInit.insertAmbientLight(sceneThreeJs.sceneGraph);
     sceneInit.insertLight(sceneThreeJs.sceneGraph,Vector3(1,2,2));
+	sceneInit.insertLight(sceneThreeJs.sceneGraph,Vector3(-1,-2,-2));
 
 	sceneThreeJs.controls = new THREE.OrbitControls( sceneThreeJs.camera );
 	sceneThreeJs.controls.enabled=false;
+	
+	texture_placeholder = document.createElement( 'canvas' );
+	texture_placeholder.width = 128;
+	texture_placeholder.height = 128;
+	var context = texture_placeholder.getContext( '2d' );
+	context.fillStyle = 'rgb( 200, 200, 200 )';
+	context.fillRect( 0, 0, texture_placeholder.width, texture_placeholder.height );
+	
+	var materials2 = [
+		loadTexture( 'pictures/ciel/px.jpg' ), // right
+		loadTexture( 'pictures/ciel/nx.jpg' ), // left
+		loadTexture( 'pictures/ciel/py.jpg' ), // top
+		loadTexture( 'pictures/ciel/ny.jpg' ), // bottom
+		loadTexture( 'pictures/ciel/pz.jpg' ), // back
+		loadTexture( 'pictures/ciel/nz.jpg' )  // front
+	];
+
+	var geometry = new THREE.BoxGeometry( 300, 300, 300, 7, 7, 7 );
+	geometry.scale( - 2, 2, 2 );
+	mesh = new THREE.Mesh( geometry, materials2 );
+	sceneThreeJs.sceneGraph.add( mesh );
 
 	sceneThreeJs.renderer = new THREE.WebGLRenderer( { antialias: true,alpha:false } );
 	sceneThreeJs.renderer.setPixelRatio( window.devicePixelRatio );
@@ -459,8 +494,6 @@ function initEmptyScene(sceneThreeJs) {
 
 	render(sceneThreeJs);
 }
-
-
 
 // Fonction appelée lors du redimensionnement de la fenetre
 function onResize(sceneThreeJs) {
@@ -930,13 +963,7 @@ function intersect(geoa,geob){
 	var xy = new ThreeBSP( geoa);
 	var xz = new ThreeBSP( geob);
 	const intersect = xy.intersect(xz);
-	const textureLoader = new THREE.TextureLoader();
-	const textureMesh = textureLoader.load( 'pictures/steel.jpg' );
-	//textureMesh.wrapS = THREE.RepeatWrapping;
-	textureMesh.wrapT = THREE.RepeatWrapping;
-	//textureMesh.repeat.set( 4, 4 );
-	const material = new THREE.MeshPhongMaterial({map: textureMesh});
-	const mesh = intersect.toMesh(material);
+	const mesh = intersect.toMesh(steelmaterial);
 	mesh.castShadow = true;
 	return mesh;
 }
@@ -945,13 +972,7 @@ function merge(geoa,geob){
 	var xy = new ThreeBSP( geoa);
 	var xz = new ThreeBSP( geob);
 	const merge = xy.union(xz);
-	const textureLoader = new THREE.TextureLoader();
-	const textureMesh = textureLoader.load( 'pictures/steel.jpg' );
-	textureMesh.wrapS = THREE.RepeatWrapping;
-	textureMesh.wrapT = THREE.RepeatWrapping;
-	textureMesh.repeat.set( 4, 4 );
-	const meshmaterial = new THREE.MeshPhongMaterial({map: textureMesh});
-	const mesh = merge.toMesh(meshmaterial);
+	const mesh = merge.toMesh(steelmaterial);
 	return mesh.geometry;
 }
 
@@ -1010,7 +1031,7 @@ function onMouseDownCabine(event) {
 			moveData.move=true;
 			moveData.lastPos=point;
 		}
-
+		
 		moveData.pointEnSelection=false;
 		if(!moveData.ctrl && point!=null){
 			for (var i=0; i < moveData.pointsABouger.length;i++){
@@ -1035,7 +1056,7 @@ function onMouseDownCabine(event) {
 				if(moveData.H.x==trav.x && moveData.H.y==trav.y && moveData.circle.visible==true){
 					moveData.circle.material.color.set(0x66ff66);
 					moveData.pointsABouger=insert(moveData.pointsABouger,moveData.H,i+1);
-
+					
 					var newgeometry = new THREE.Geometry();
 					newgeometry.vertices = moveData.pointsABouger;
 					moveData.line.geometry = newgeometry;
@@ -1052,7 +1073,7 @@ function onMouseDownCabine(event) {
 					const pts=moveData.pointsABouger[i];
 					if ((point.x-pts.x)*(point.x-pts.x)+(point.y-pts.y)*(point.y-pts.y) < (moveData.radius+0.005)*(moveData.radius+0.005) ) {
 						moveData.pointsABouger.splice(i,1);
-
+						
 						var newgeometry = new THREE.Geometry();
 						newgeometry.vertices = moveData.pointsABouger;
 						moveData.line.geometry = newgeometry;
@@ -1062,7 +1083,7 @@ function onMouseDownCabine(event) {
 				moveData.move=false;
 			}
 		}
-
+		
 		moveData.pt.geometry.vertices=moveData.pointsABouger;
 		createCabine();
 	}else if(!moveData.paint && !moveData.ctrl){
@@ -1114,7 +1135,7 @@ function onMouseMoveCabine(event) {
 					moveData.pointsABouger[i].y=point.y;
 				}
 			}
-
+			
 			var troploin=true;
 
 			for(var i=0;i<moveData.tabline.length;i++){
@@ -1129,7 +1150,7 @@ function onMouseMoveCabine(event) {
 					troploin=false;
 				}
 			}
-
+			
 			if (troploin) {
 				moveData.circle.visible=false;
 			}
@@ -1152,7 +1173,7 @@ function onMouseMoveCabine(event) {
 					moveData.circle.material.color.set(0x66ff66);
 				}
 			}
-
+			
 		}
 		var newgeometry = new THREE.Geometry();
 		newgeometry.vertices = moveData.pointsABouger;
@@ -1161,7 +1182,7 @@ function onMouseMoveCabine(event) {
 		createCabine();
 	}else if(!moveData.paint && moveData.pickingData.pickable && !moveData.ctrl){
 		var point = RayProj3(moveData.large/2,xPixel,yPixel);
-		if(point!=null){
+		if(point!=null){			
 			for(var i=0; i<moveData.pointsABouger.length;i++){
 				var trans = new THREE.Vector3(point.x-moveData.lastPos.x,point.y-moveData.lastPos.y,0);
 				moveData.pointsABouger[i].add(trans);
@@ -1188,13 +1209,15 @@ function onKeyDownCabine(event) {
 			sceneThreeJs.sceneGraph.add(moveData.pt);
 			sceneThreeJs.sceneGraph.add(moveData.object);
 			sceneThreeJs.objects[1][moveData.i]=null;
+			sceneThreeJs.objects[1].pop();
 			moveData.paint=true;
-		}else{
+		}else if(moveData.object!=null);{
 			sceneThreeJs.objects[1][moveData.i]=moveData.object;
 			sceneThreeJs.sceneGraph.remove(moveData.line);
 			sceneThreeJs.sceneGraph.remove(moveData.pt);
 			sceneThreeJs.sceneGraph.remove(moveData.object);
 			sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[1][moveData.i]);
+			sceneThreeJs.objects[1].push(null);
 			moveData.object=null;
 			moveData.paint=false;
 			moveData.circle.visible=false;
@@ -1216,11 +1239,12 @@ function onKeyDownCabine(event) {
 	}else if(event.keyCode==32){
 		if(sceneThreeJs.objects[1][moveData.i]===null && moveData.object!=null){
 			sceneThreeJs.sceneGraph.remove(moveData.object);
-			sceneThreeJs.sceneGraph.remove(moveData.line);
-			sceneThreeJs.sceneGraph.remove(moveData.pt);
 			sceneThreeJs.objects[1][moveData.i]=moveData.object;
 			sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[1][moveData.i]);
+			sceneThreeJs.objects[1].push(null);
 		}
+		sceneThreeJs.sceneGraph.remove(moveData.line);
+		sceneThreeJs.sceneGraph.remove(moveData.pt);
 		moveData.pointsABouger=[],
 		moveData.bouge=[],
 		moveData.tabline=[],
@@ -1235,7 +1259,6 @@ function onKeyDownCabine(event) {
 		moveData.large=0,
 		moveData.paint=true,
 		moveData.i++;
-		sceneThreeJs.objects[1].push(null);
 		initCabine();
 	}else if(event.keyCode==90 && event.ctrlKey){
 		moveData.circle.visible=false;
@@ -1245,11 +1268,13 @@ function onKeyDownCabine(event) {
 			sceneThreeJs.sceneGraph.remove(moveData.line);
 			moveData.paint=false;
 			moveData.object=null;
+			moveData.i--;
 		}else{
 			if(sceneThreeJs.objects[1].length>=2){
 				sceneThreeJs.sceneGraph.remove(sceneThreeJs.objects[1][sceneThreeJs.objects[1].length-2]);
 				sceneThreeJs.objects[1][sceneThreeJs.objects[1].length-2]=null;
 				sceneThreeJs.objects[1].pop();
+				moveData.i--;
 			}
 		}
 	}else if(event.keyCode==83){
@@ -1339,13 +1364,7 @@ function RayProj3(height,xPixel,yPixel){
 function createCabine(){
 	const cabShape = new THREE.Shape(moveData.pt.geometry.vertices);
 	const extrudegeo = new THREE.ExtrudeGeometry(cabShape,{amount:moveData.large, bevelEnabled: false});
-	const textureLoader = new THREE.TextureLoader();
-	const textureMesh = textureLoader.load( 'pictures/black4.jpg' );
-	textureMesh.wrapS = THREE.RepeatWrapping;
-	textureMesh.wrapT = THREE.RepeatWrapping;
-	textureMesh.repeat.set( 4, 4 );
-	const meshmaterial = new THREE.MeshPhongMaterial({map: textureMesh});
-	const object = new THREE.Mesh(extrudegeo, meshmaterial);
+	const object = new THREE.Mesh(extrudegeo, black4material);
 	object.translateZ(-moveData.large/2);
 	object.geometry.computeFaceNormals();
 	object.name="cabine";
@@ -1473,7 +1492,7 @@ function onMouseDownAile(event) {
 						}else{
 							moveData2.pointsABouger.splice(moveData2.pointsABouger.length-i-1,1);
 						}
-
+						
 						var newgeometry = new THREE.Geometry();
 						newgeometry.vertices = moveData2.pointsABouger;
 						moveData2.line.geometry = newgeometry;
@@ -1483,10 +1502,10 @@ function onMouseDownAile(event) {
 				moveData2.move=false;
 			}
 		}
-
+		
 		moveData2.pt.geometry.vertices=moveData2.pointsABouger;
 		createAile();
-
+		
 	}else if(!moveData2.paint && !moveData2.ctrl){
 		var point = RayProj2(moveData2.y+moveData2.large,xPixel,yPixel);
 		if(isInsidePolygon2(xPixel,yPixel,moveData2.object)){
@@ -1524,27 +1543,37 @@ function onMouseMoveAile(event) {
 		var point = RayProj2(moveData2.y+moveData2.large,xPixel,yPixel);
 		//parcours des booléens associés auc points
 		if(moveData2.move && point!=null){
-			for(var i=0; i<moveData2.pointsABouger.length;i++){
-				var trans = new THREE.Vector3(point.x-moveData2.lastPos.x,0,0);
-				moveData2.pointsABouger[i].add(trans);
+			var point2 = RayProj3(moveData.large/2,xPixel,yPixel);
+			if(point2!=null){
+				for(var i=0; i<moveData2.pointsABouger.length;i++){
+					var trans = new THREE.Vector3(point2.x-moveData2.lastPos.x,point2.y-moveData2.lastPos.y,0);
+					moveData2.pointsABouger[i].add(trans);
+					moveData2.y=moveData2.pointsABouger[i].y;
+				}
+				moveData2.lastPos=point2;
+			}else{
+				for(var i=0; i<moveData2.pointsABouger.length;i++){
+					var trans = new THREE.Vector3(point.x-moveData2.lastPos.x,0,0);
+					moveData2.pointsABouger[i].add(trans);
+				}
+				moveData2.lastPos=point;
 			}
-			moveData2.lastPos=point;
 		}else if(point!=null){
 			for (var i=0;i<moveData2.bouge.length;i++){
 				if (moveData2.bouge[i]) {
 					if(i==0 || i==moveData2.pointsABouger.length-1 || i==(moveData2.pointsABouger.length-1)/2){
-						moveData2.pointsABouger[i].x=point.x;
+						moveData2.pointsABouger[i].x=point.x;	
 					}
 					else{
 						moveData2.pointsABouger[i].x=point.x;
 						moveData2.pointsABouger[i].z=point.z;
 
 						moveData2.pointsABouger[moveData2.pointsABouger.length-i-1].x=point.x;
-						moveData2.pointsABouger[moveData2.pointsABouger.length-i-1].z=-point.z;
+						moveData2.pointsABouger[moveData2.pointsABouger.length-i-1].z=-point.z;		
 					}
 				}
 			}
-
+			
 			var troploin=true;
 
 			for(var i=0;i<moveData2.tabline.length;i++){
@@ -1559,7 +1588,7 @@ function onMouseMoveAile(event) {
 					troploin=false;
 				}
 			}
-
+			
 			if (troploin) {
 				moveData2.circle.visible=false;
 			}
@@ -1568,7 +1597,7 @@ function onMouseMoveAile(event) {
 			if (moveData2.pointEnSelection){
 				moveData2.circle.material.color.set(0x66ff66);
 			}else{
-				if(moveData.suppr){
+				if(moveData2.suppr){
 					moveData2.circle.material.color.set(0xff6666);
 				}else{
 					moveData2.circle.material.color.set(0xffff00);
@@ -1582,13 +1611,13 @@ function onMouseMoveAile(event) {
 					moveData2.circle.material.color.set(0x66ff66);
 				}
 			}
-
+			
 		}
 		var newgeometry = new THREE.Geometry();
 		newgeometry.vertices = moveData2.pointsABouger;
 		moveData2.line.geometry = newgeometry;
 		moveData2.pt.geometry = newgeometry;
-		createAile();
+		createAile();		
 	}else if(!moveData2.paint && moveData2.pickingData.pickable && !moveData2.ctrl){
 		var point = RayProj2(moveData2.y+moveData2.large,xPixel,yPixel);
 		if(point!=null){
@@ -1618,13 +1647,15 @@ function onKeyDownAile(event) {
 			sceneThreeJs.sceneGraph.add(moveData2.pt);
 			sceneThreeJs.sceneGraph.add(moveData2.object);
 			sceneThreeJs.objects[2][moveData2.i]=null;
+			sceneThreeJs.objects[1].pop();
 			moveData2.paint=true;
-		}else{
+		}else{	
 			sceneThreeJs.objects[2][moveData2.i]=moveData2.object;
 			sceneThreeJs.sceneGraph.remove(moveData2.line);
 			sceneThreeJs.sceneGraph.remove(moveData2.pt);
 			sceneThreeJs.sceneGraph.remove(moveData2.object);
 			sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[2][moveData2.i]);
+			sceneThreeJs.objects[1].push(null);
 			moveData2.object=null;
 			moveData2.paint=false;
 			moveData2.circle.visible=false;
@@ -1644,12 +1675,12 @@ function onKeyDownAile(event) {
 	}else if(event.keyCode==32){
 		if(sceneThreeJs.objects[2][moveData2.i]===null && moveData2.object!=null){
 			sceneThreeJs.sceneGraph.remove(moveData2.object);
-			sceneThreeJs.sceneGraph.remove(moveData2.line);
-			sceneThreeJs.sceneGraph.remove(moveData2.pt);
 			sceneThreeJs.objects[2][moveData2.i]=moveData2.object;
 			sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[2][moveData2.i]);
 			moveData2.circle.visible=false;
 		}
+		sceneThreeJs.sceneGraph.remove(moveData2.line);
+		sceneThreeJs.sceneGraph.remove(moveData2.pt);
 		moveData2.pointsABouger=[],
 		moveData2.bouge=[],
 		moveData2.tabline=[],
@@ -1674,11 +1705,13 @@ function onKeyDownAile(event) {
 			sceneThreeJs.sceneGraph.remove(moveData2.line);
 			moveData2.paint=false;
 			moveData2.object=null;
+			moveData2.i--;
 		}else{
 			if(sceneThreeJs.objects[2].length>=2){
 				sceneThreeJs.sceneGraph.remove(sceneThreeJs.objects[2][sceneThreeJs.objects[2].length-2]);
 				sceneThreeJs.objects[2][sceneThreeJs.objects[2].length-2]=null;
 				sceneThreeJs.objects[2].pop();
+				moveData2.i--;
 			}
 		}
 	}else if(event.keyCode==83){
@@ -1761,13 +1794,7 @@ function RayProj2(height,xPixel,yPixel){
 function createAile(){
 	const cabShape = new THREE.Shape(moveData2.pt.geometry.rotateX(Math.PI/2).vertices);
 	const extrudegeo = new THREE.ExtrudeGeometry(cabShape,{amount:moveData2.large, bevelEnabled: false});
-	const textureLoader = new THREE.TextureLoader();
-	const textureMesh = textureLoader.load( 'pictures/steel5.jpg' );
-	textureMesh.wrapS = THREE.RepeatWrapping;
-	textureMesh.wrapT = THREE.RepeatWrapping;
-	textureMesh.repeat.set( 10, 1 );
-	const meshmaterial = new THREE.MeshPhongMaterial({map: textureMesh});
-	const object = new THREE.Mesh(extrudegeo, meshmaterial);
+	const object = new THREE.Mesh(extrudegeo, woodmaterial);
 	object.name="aile";
 	object.position.set(0,0,0);
 	object.rotateX(-Math.PI/2);
