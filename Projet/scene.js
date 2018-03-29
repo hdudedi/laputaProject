@@ -199,6 +199,7 @@ function initGui(guiParam,sceneThreeJs) {
 		Aile: function() { guiParam.etape = 3;  },
 		Helice: function() { guiParam.etape = 4;  },
 		Save: function(){ saveScene(sceneThreeJs.sceneGraph); },
+		ExportTout: function(){ exportOBJ2(sceneThreeJs.objects); },
 		ExportBallon: function(){ exportOBJ(sceneThreeJs.objects,exp[0]); },
 		ExportCabineEtGouvernail: function(){ exportOBJ(sceneThreeJs.objects,exp[1]); },
 		ExportAiles: function(){ exportOBJ(sceneThreeJs.objects,exp[2]); },
@@ -216,6 +217,7 @@ function initGui(guiParam,sceneThreeJs) {
 	gui.add( etapeType, "Helice").onFinishChange(updateFunc);
 
 	//gui.add( etapeType, "Save");
+	gui.add( etapeType, "ExportTout");
 	gui.add( etapeType, "ExportBallon");
 	gui.add( etapeType, "ExportCabineEtGouvernail");
 	gui.add( etapeType, "ExportAiles");
@@ -276,6 +278,50 @@ function exportOBJ(createdObjects,num) {
 			}
 		}
 
+    download( stringOBJ, "Laputa.obj" );
+}
+
+function exportOBJ2(createdObjects) {
+    console.log(createdObjects);
+    let stringOBJ = "";
+    let offset = 0;
+
+    for(const k in createdObjects){
+			let count = 0;
+			console.log(k, createdObjects[k]);
+			for( const l in createdObjects[k] ){
+				if(createdObjects[k][l]!=null){
+					count++;
+					// *************************************** //
+			        // Applique préalablement la matrice de transformation sur une copie des sommets du maillage
+			        // *************************************** //
+			        createdObjects[k][l].updateMatrix();
+			        const matrix = createdObjects[k][l].matrix;
+			        const toExport = createdObjects[k][l].geometry.clone();
+			        toExport.applyMatrix( matrix );
+			        // *************************************** //
+			        // Exporte les sommets et les faces
+			        // *************************************** //
+			        if( toExport.vertices!==undefined && toExport.faces!==undefined ) {
+			            const vertices = toExport.vertices;
+			            const faces = toExport.faces;
+			            for( const k in vertices ) {
+			                const v = vertices[k];
+			                stringOBJ += "v "+ v.x+ " "+ v.y+ " "+ v.z+ "\n";
+			            }
+			            for( const k in faces  ) {
+			                const f = faces[k];
+			                // Les faces en OBJ sont indexés à partir de 1
+			                const a = f.a + 1 + offset;
+			                const b = f.b + 1 + offset;
+			                const c = f.c + 1 + offset;
+			                stringOBJ += "f "+ a+ " "+ b+ " "+ c+ "\n";
+			            }
+			            offset += vertices.length;
+			        }
+				}
+			}
+		}
     download( stringOBJ, "Laputa.obj" );
 }
 
