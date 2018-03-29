@@ -14,7 +14,7 @@ function main() {
 
     var atelecharger=[];
 
-    var elements=["BallonCabine","Gouvernail","ailes"];
+    var elements=["ballon","cabine","ailes","helices"];
     console.log(elements);
 
 
@@ -27,12 +27,14 @@ function main() {
     const loadBall = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[0]); };
     const loadGouv = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[1]); };
     const loadAiles = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[2]); };
+    const loadHelices = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[3]); };
     const exportOBJFunction = function(){ exportOBJ(atelecharger); };
     const guiInterface = {
         Save: saveFunction,
         LoadBall: loadBall,
         LoadGouv: loadGouv,
         LoadAiles: loadAiles,
+        LoadHelices: loadHelices,
         ExportOBJ: exportOBJFunction,
     }
     const gui = new dat.GUI();
@@ -40,7 +42,8 @@ function main() {
     gui.add(guiInterface,"LoadBall");
     gui.add(guiInterface,"LoadGouv");
     gui.add(guiInterface,"LoadAiles");
-    gui.add(guiInterface,"ExportOBJ");
+    gui.add(guiInterface,"LoadHelices");
+    //gui.add(guiInterface,"ExportOBJ");
 
     animationLoop(sceneThreeJs);
 
@@ -53,15 +56,15 @@ function saveScene(sceneGraph,createdObjects) {
 function loadScene(sceneGraph,createdObjects,partie) {
 
     // Supprime les éléments de la scène actuels
-    console.log(sceneGraph);
-    for(var i in sceneGraph.children){
-  		sceneGraph.remove(sceneGraph.children[i]);
-      console.log(sceneGraph);
-  	}
-
-    for(var i in createdObjects){
-  		createdObjects[i]=null;
-  	}
+    // console.log(sceneGraph);
+    // for(var i in sceneGraph.children){
+  	// 	sceneGraph.remove(sceneGraph.children[i]);
+    //   console.log(sceneGraph);
+  	// }
+    //
+    // for(var i in createdObjects){
+  	// 	createdObjects[i]=null;
+  	// }
 
 
     //createdObjects.length = 1; // supprime les cubes précédents (rem. le plan reste et il est le premier élément)
@@ -74,7 +77,7 @@ function loadScene(sceneGraph,createdObjects,partie) {
   	partie+".obj",
   	// called when resource is loaded
   	function ( object ) {
-
+      object.name=partie;
   		sceneGraph.add( object );
 
   	},
@@ -91,6 +94,7 @@ function loadScene(sceneGraph,createdObjects,partie) {
 
   	}
   );
+  console.log(sceneGraph.children);
 }
 
 THREE.OBJLoader = ( function () {
