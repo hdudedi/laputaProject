@@ -253,17 +253,17 @@ function download(text, name) {
 /*-----------------Fonction pour faire un export pièce par pièce pour l'animation ou pour la fabrication-------------------*/
 
 function exportOBJ(createdObjects,num) {
-    console.log(createdObjects);
     let stringOBJ = "";
     let offset = 0;
 
     const k=num;
 	let count = 0;
-	console.log(k, createdObjects[k]);
 	for( const l in createdObjects[k] ){
+		let stringOBJ = "";
+		let offset = 0;
 		if(createdObjects[k][l]!=null){
 			const object = createdObjects[k][l].clone();
-			console.log(num+" : position en ("+object.position.x+","+object.position.y+","+object.position.z+")"
+			console.log("partie n°"+num+" "+count+" : position en ("+object.position.x+","+object.position.y+","+object.position.z+")"
 			object.position.set(0,0,0);
 			count++;
 			// *************************************** //
@@ -294,9 +294,8 @@ function exportOBJ(createdObjects,num) {
 				offset += vertices.length;
 			}
 		}
+		download( stringOBJ, "Laputa"+count+".obj" );
 	}
-
-    download( stringOBJ, "Laputa.obj" );
 }
 
 
