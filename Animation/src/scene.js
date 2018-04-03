@@ -1074,11 +1074,16 @@ function animate(sceneThreeJs, time) {
     }
 
     if(ailes!=null){
+      if(anim==0){
+      }
+      else if(anim==2){
+        var rotationMatrix = new THREE.Matrix4().makeRotationAxis( Vector3(0,0,1),  2*t);
+        ailes.setRotationFromMatrix(rotationMatrix);
+      }
       //ailes.rotateZ(t*Math.PI/4.0/400);
-      var rotationMatrix = new THREE.Matrix4().makeRotationAxis( Vector3(0,0,1),  2*t);
-      ailes.setRotationFromMatrix(rotationMatrix);
+
       //ailes.rotateOnAxis(Vector3(0,1,0),Math.PI/4/100);
-      ailes.position.set(-0.12,-0.10874014232747856,0);
+      //ailes.position.set(-0.12,-0.10874014232747856,0);
       //ailes.position.set(0,-0.10874014232747856,0);
     }
 
