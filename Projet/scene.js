@@ -6,9 +6,15 @@ const sceneThreeJs = {
 	camera: null,
 	renderer: null,
 	controls: null,
+	animate:false,
 	objects:[[null],[null],[null],[null]],
 	helice:null,
 };
+
+const animation={
+	framen:0,
+	phase:0,
+}
 
 const paintDatas = {
 	view:"XY",
@@ -208,16 +214,15 @@ function initGui(guiParam,sceneThreeJs) {
         CabineEtGouvernail: function() { guiParam.etape = 2;  },
 		Aile: function() { guiParam.etape = 3;  },
 		Helice: function() { guiParam.etape = 4;  },
-		Save: function(){ saveScene(sceneThreeJs.sceneGraph); },
+		Animate: function(){ construct(); sceneThreeJs.animate=!sceneThreeJs.animate;},
 		ExportTout: function(){ exportOBJ2(sceneThreeJs.objects); },
 		/*-------------------Ajout des fonctions pour faire un export pièce par pièce pour l'animation ou our la fabrication-------------*/
-		
+		/*
 		ExportBallon: function(){ exportOBJ(sceneThreeJs.objects,0); },
 		ExportCabineEtGouvernail: function(){ exportOBJ(sceneThreeJs.objects,1); },
 		ExportAiles: function(){ exportOBJ(sceneThreeJs.objects,2); },
 		ExportHélices: function(){ exportOBJ(sceneThreeJs.objects,3); },
-		
-		Import: function(){ importScene(); },
+		*/
     };
 
     const updateFunc = function() { updatedGui(guiParam,sceneThreeJs); };
@@ -229,16 +234,16 @@ function initGui(guiParam,sceneThreeJs) {
 	gui.add( etapeType, "Aile").onFinishChange(updateFunc);
 	gui.add( etapeType, "Helice").onFinishChange(updateFunc);
 
-	//gui.add( etapeType, "Save");
+	gui.add( etapeType, "Animate");
 	gui.add( etapeType, "ExportTout");
-	gui.add( etapeType, "ExportBallon");
-	gui.add( etapeType, "ExportCabineEtGouvernail");
-	gui.add( etapeType, "ExportAiles");
-	gui.add( etapeType, "ExportHélices");
+	//gui.add( etapeType, "ExportBallon");
+	//gui.add( etapeType, "ExportCabineEtGouvernail");
+	//gui.add( etapeType, "ExportAiles");
+	//gui.add( etapeType, "ExportHélices");
 }
 
 function saveScene(sceneGraph,createdObjects) {
-    download( JSON.stringify(sceneGraph), "save_scene.json" );
+    download( JSON.stringify(sceneGraph), "save_scene.js" );
 }
 
 function download(text, name) {
@@ -251,27 +256,24 @@ function download(text, name) {
 }
 
 /*-----------------Fonction pour faire un export pièce par pièce pour l'animation ou pour la fabrication-------------------*/
-
+/*
 function exportOBJ(createdObjects,num) {
+    console.log(createdObjects);
     let stringOBJ = "";
     let offset = 0;
 
     const k=num;
 	let count = 0;
+	console.log(k, createdObjects[k]);
 	for( const l in createdObjects[k] ){
-		let stringOBJ = "";
-		let offset = 0;
 		if(createdObjects[k][l]!=null){
-			const object = createdObjects[k][l].clone();
-			console.log("partie n°"+num+" "+count+" : position en ("+object.position.x+","+object.position.y+","+object.position.z+")"
-			object.position.set(0,0,0);
 			count++;
 			// *************************************** //
 			// Applique préalablement la matrice de transformation sur une copie des sommets du maillage
 			// *************************************** //
-			object.updateMatrix();
-			const matrix = object.matrix;
-			const toExport = object.geometry.clone();
+			createdObjects[k][l].updateMatrix();
+			const matrix = createdObjects[k][l].matrix;
+			const toExport = createdObjects[k][l].geometry.clone();
 			toExport.applyMatrix( matrix );
 			// *************************************** //
 			// Exporte les sommets et les faces
@@ -294,10 +296,11 @@ function exportOBJ(createdObjects,num) {
 				offset += vertices.length;
 			}
 		}
-		download( stringOBJ, "Laputa"+count+".obj" );
 	}
-}
 
+    download( stringOBJ, "Laputa.obj" );
+}
+*/
 
 const iData = {
 	CtrlSouris:function(){},
@@ -378,12 +381,21 @@ function exportOBJ2(createdObjects) {
 }
 
 function importScene(){
-	loadJSON(function(response) {
-		// Parse JSON string into object
-		sceneThreeJs.sceneGraph = JSON.parse(response);
-		console.log(sceneThreeJs.sceneGraph);
-		render(sceneThreeJs);
-	});
+	const loader = new THREE.ObjectLoader();
+    loader.load(test,
+		function(elementsScene) {
+			const children = elementsScene.children;
+			const N = children.length;
+			const toBeAdded = [];
+			for( let k =0; k<N; k++ ) {
+				const e = children[k];
+				toBeAdded.push(e);
+			}
+			for( const k in toBeAdded ) {
+				sceneThreeJs.sceneGraph.add(toBeAdded[k]);
+			}
+		}
+	);
 }
 
 // Demande le rendu de la scène 3D
@@ -528,6 +540,7 @@ function initEmptyScene(sceneThreeJs) {
 	// For Firefox
 	document.addEventListener('DOMMouseScroll', wrapperWheel);
 
+	animationLoop(sceneThreeJs);
 	render(sceneThreeJs);
 }
 
@@ -1921,7 +1934,6 @@ function onKeyDownHelice(event) {
 			sceneThreeJs.sceneGraph.remove(sceneThreeJs.objects[3][sceneThreeJs.objects[3].length-2]);
 			sceneThreeJs.objects[3][sceneThreeJs.objects[3].length-2]=null;
 			sceneThreeJs.objects[3].pop();
-			console.log("ok");
 		}
 	}else if(event.ctrlKey){
 		heliceData.ctrl=true;
@@ -1964,6 +1976,83 @@ function MaterialRGB(r,g,b) {
     return new THREE.MeshLambertMaterial( {color:c} );
 }
 
+function construct(){
+	for(var i=0; i<sceneThreeJs.objects.length; i++){
+		for(var j=0; j<sceneThreeJs.objects[i].length; j++){
+			sceneThreeJs.sceneGraph.remove(sceneThreeJs.objects[i][j]);
+		}
+	}
+	
+	var pos1=sceneThreeJs.objects[3][0].position.y;
+	var pos2=sceneThreeJs.objects[3][1].position.y;
+	
+	// sceneThreeJs.objects[3][0].position.set(0,0,0);
+	// sceneThreeJs.objects[3][1].position.set(0,0,0);
+	
+	sceneThreeJs.sceneGraph.add(sceneThreeJs.objects[0][0]);
+	for(var j=0; j<sceneThreeJs.objects[1].length; j++){
+		sceneThreeJs.objects[0][0].add(sceneThreeJs.objects[1][j]);
+	}
+	for(var j=0; j<sceneThreeJs.objects[2].length; j++){
+		sceneThreeJs.objects[0][0].add(sceneThreeJs.objects[2][j]);
+	}
+	
+	sceneThreeJs.objects[2][0].add(sceneThreeJs.objects[3][0]);
+	sceneThreeJs.objects[2][0].add(sceneThreeJs.objects[3][1]);
+	sceneThreeJs.objects[0][0].add(sceneThreeJs.objects[3][2]);
+	
+	sceneThreeJs.objects[3][0].position.set(sceneThreeJs.objects[3][0].position.x,-sceneThreeJs.objects[3][0].position.z,0);
+	sceneThreeJs.objects[3][1].position.set(sceneThreeJs.objects[3][0].position.x,-sceneThreeJs.objects[3][1].position.z,0);
+	sceneThreeJs.objects[0][0].translateY(-0.1);
+}
 
+function animate(sceneThreeJs, time) {
+	if(sceneThreeJs.animate){
+		console.log("animate");
+		animation.framen++;
+		var t=animation.framen;
+		sceneThreeJs.objects[3][0].rotateZ(Math.PI/20);
+		sceneThreeJs.objects[3][1].rotateZ(Math.PI/20);
+		sceneThreeJs.objects[3][2].rotateZ(Math.PI/20);
+		if(t%200==0){
+			if(animation.phase==7){
+				animation.phase=0;
+			}else{
+				animation.phase++;
+			}
+		}
+		if(animation.phase==3 || animation.phase==7){
+			sceneThreeJs.objects[2][0].rotateY(-Math.PI/(2*200));
+		}else if(animation.phase==1 || animation.phase==5){
+			sceneThreeJs.objects[2][0].rotateY(Math.PI/(2*200));
+		}
+		
+		if(animation.phase==1 || animation.phase==3){
+			sceneThreeJs.objects[0][0].translateY(0.0010);
+			sceneThreeJs.objects[0][0].translateX(-0.0010);
+		}else if(animation.phase==2){
+			sceneThreeJs.objects[0][0].translateY(0.003);
+		}else if(animation.phase==4 || animation.phase==0){
+			sceneThreeJs.objects[0][0].translateX(-0.003);
+		}else if(animation.phase==5 || animation.phase==7 ){
+			sceneThreeJs.objects[0][0].translateY(-0.0010);
+			sceneThreeJs.objects[0][0].translateX(-0.0010);
+		}else if(animation.phase==6){
+			sceneThreeJs.objects[0][0].translateY(-0.003);
+		}
+	}
+	render(sceneThreeJs);
+}
+
+function animationLoop(sceneThreeJs) {
+    // Fonction JavaScript de demande d'image courante à afficher
+    requestAnimationFrame(
+        // La fonction (dite de callback) recoit en paramètre le temps courant
+        function(timeStamp){
+            animate(sceneThreeJs,timeStamp); // appel de notre fonction d'animation
+            animationLoop(sceneThreeJs); // relance une nouvelle demande de mise à jour
+        }
+    );
+}
 
 init();
