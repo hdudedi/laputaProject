@@ -1074,11 +1074,14 @@ function animate(sceneThreeJs, time) {
     }
 
     if(ailes!=null){
-      if(anim==0){
+      if(anim==0 || anim==2){
+        ailes.setRotationFromEuler = new THREE.Euler( 0, 0, 0, 'XYZ' );
       }
-      else if(anim==2){
-        var rotationMatrix = new THREE.Matrix4().makeRotationAxis( Vector3(0,0,1),  2*t);
+      else if(anim==1){
+        var rotationMatrix = new THREE.Matrix4().makeRotationAxis( Vector3(0,0,-1),  2*t);
         ailes.setRotationFromMatrix(rotationMatrix);
+        //ailes.setRotationFromEuler = new THREE.Euler( 0, 0, Math.PI/2, 'XYZ' );
+        console.log(ailes.rotation);
       }
       //ailes.rotateZ(t*Math.PI/4.0/400);
 
