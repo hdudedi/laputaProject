@@ -5,17 +5,23 @@ main();
 
 function main() {
 
+
     const sceneThreeJs = {
         sceneGraph: null,
         camera: null,
         renderer: null,
         controls: null,
+        clock: null,
+        arrAnimations: null,
+        actualAnimation: null,
+        mixer: null,
+        constr: null,
+        anim: null
     };
 
     var atelecharger=[];
 
-    var elements=["ballon","cabine","ailes","helices"];
-    console.log(elements);
+    var elements=["ballon","cabine","gouvernail","ailes","helice1","helice2","helice3"];
 
 
     initEmptyScene(sceneThreeJs);
@@ -25,24 +31,37 @@ function main() {
     const saveFunction = function(){ saveScene(sceneThreeJs.sceneGraph); };
     //const loadFunction = function(){ loadScene(sceneThreeJs.sceneGraph,pickingData.selectableObjects); };
     const loadBall = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[0]); };
-    const loadGouv = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[1]); };
-    const loadAiles = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[2]); };
-    const loadHelices = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[3]); };
+    const loadCabine = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[1]); };
+    const loadGouv = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[2]); };
+    const loadAiles = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[3]); };
+    const loadHelices1 = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[4]); };
+    const loadHelices2 = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[5]); };
+    const loadHelices3 = function(){ loadScene(sceneThreeJs.sceneGraph,atelecharger,elements[6]); };
     const exportOBJFunction = function(){ exportOBJ(atelecharger); };
+    const Construire = function(){ construire(sceneThreeJs, sceneThreeJs.sceneGraph); };
+
     const guiInterface = {
         Save: saveFunction,
         LoadBall: loadBall,
+        LoadCabine:loadCabine,
         LoadGouv: loadGouv,
         LoadAiles: loadAiles,
-        LoadHelices: loadHelices,
+        LoadHelices1: loadHelices1,
+        LoadHelices2: loadHelices2,
+        LoadHelices3: loadHelices3,
         ExportOBJ: exportOBJFunction,
+        Construction: Construire,
     }
     const gui = new dat.GUI();
     gui.add(guiInterface,"Save");
     gui.add(guiInterface,"LoadBall");
+    gui.add(guiInterface,"LoadCabine");
     gui.add(guiInterface,"LoadGouv");
     gui.add(guiInterface,"LoadAiles");
-    gui.add(guiInterface,"LoadHelices");
+    gui.add(guiInterface,"LoadHelices1");
+    gui.add(guiInterface,"LoadHelices2");
+    gui.add(guiInterface,"LoadHelices3");
+    gui.add(guiInterface,"Construction");
     //gui.add(guiInterface,"ExportOBJ");
 
     animationLoop(sceneThreeJs);
@@ -948,10 +967,15 @@ function download(text, name) {
 function init3DObjects(sceneGraph,atelecharger) {
 
 
+
+
+
     //Création d'une pale
-
-
-
+    // if(sceneGraph.getObjectByName("ailes")!=null && sceneGraph.getObjectByName("helices")!=null ){
+    //   const ailes=sceneGraph.getObjectByName("ailes");
+    //   const helices=sceneGraph.getObjectByName("helices");
+    //   ailes.add(helices);
+    // }
 
     //Création des trois autres pales
 
@@ -959,6 +983,35 @@ function init3DObjects(sceneGraph,atelecharger) {
     //creation du cylindre
 
 
+
+}
+
+function construire(sceneThreeJs, sceneGraph){
+  const ballon=sceneGraph.getObjectByName("ballon");
+  const cabine=sceneGraph.getObjectByName("cabine");
+  const gouvernail=sceneGraph.getObjectByName("gouvernail");
+  const ailes=sceneGraph.getObjectByName("ailes");
+  const helice1=sceneGraph.getObjectByName("helice1");
+  const helice2=sceneGraph.getObjectByName("helice2");
+  //const helice3=sceneGraph.getObjectByName("helice3");
+
+  //ailes.rotateOnAxis(Vector3(0,1,0),Math.PI/4);
+  //helice1.rotateOnAxis(Vector3(1,0,0),Math.PI/4);
+  //ailes.position.set(0,-5,0);
+  console.log(ailes);
+  ballon.add(cabine);
+  ballon.add(gouvernail);
+  ballon.add(ailes);
+  ailes.add(helice1);
+  ailes.add(helice2);
+  //cabine.add(helice3);
+  cabine.position.set(0,0,-0.020152424755704546);
+  gouvernail.position.set(0,0,-0.005152424755704551);
+  ailes.position.set(-0.12,-0.10874014232747856,0);
+  helice1.position.set(-0.052078769570014005,-0.09874014255099592,0.2817096448784984);
+  helice2.position.set(-0.04058011755784452,-0.09874014255099581,-0.27454928326753164);
+
+  sceneThreeJs.constr=true;
 
 }
 
@@ -970,18 +1023,93 @@ function render( sceneThreeJs ) {
 }
 
 function animate(sceneThreeJs, time) {
-
+  const clock=sceneThreeJs.clock;
     const t = time/1000;//time in second
-
-    const pale1 = sceneThreeJs.sceneGraph.getObjectByName("pale1");
-    const pale2 = sceneThreeJs.sceneGraph.getObjectByName("pale2");
-
-    const rotationMatrix = new THREE.Matrix4().makeRotationAxis( Vector3(0,0,1),  2*t);
+    //console.log(clock);
+    //var tp=clock.oldTime;
+    var anim=sceneThreeJs.anim;
 
 
-    if (pale1!=null && pale2!=null){
-      pale1.setRotationFromMatrix(rotationMatrix);
-      pale2.setRotationFromMatrix(rotationMatrix);
+    const ballon = sceneThreeJs.sceneGraph.getObjectByName("ballon");
+    const cabine = sceneThreeJs.sceneGraph.getObjectByName("cabine");
+    const gouvernail = sceneThreeJs.sceneGraph.getObjectByName("gouvernail");
+    const ailes = sceneThreeJs.sceneGraph.getObjectByName("ailes");
+    const helice1=sceneThreeJs.sceneGraph.getObjectByName("helice1");
+    const helice2=sceneThreeJs.sceneGraph.getObjectByName("helice2");
+    //console.log(ailes);
+
+    if(!sceneThreeJs.constr){
+      anim=0;
+    }
+    else{
+      if (time%10000<5000){
+          anim=1;
+      }
+      else{
+        anim=2;
+      }
+    }
+
+
+//   var rotationMatrix = new THREE.Matrix4().makeRotationAxis( Vector3(0,0,1),  t/10);
+//   ailes.setRotationFromMatrix(rotationMatrix);
+
+
+    if(ballon!=null){
+      if(anim==1){
+        ballon.translateY(t/10000)
+      }
+      else if (anim==2) {
+        ballon.translateOnAxis(Vector3(-1,0.5,0),t/1000);
+      }
+
+    }
+    if(cabine!=null){
+      if(anim==1){
+
+      }
+    }
+
+    if(gouvernail!=null){
+    }
+
+    if(ailes!=null){
+      //ailes.rotateZ(t*Math.PI/4.0/400);
+      var rotationMatrix = new THREE.Matrix4().makeRotationAxis( Vector3(0,0,1),  2*t);
+      ailes.setRotationFromMatrix(rotationMatrix);
+      //ailes.rotateOnAxis(Vector3(0,1,0),Math.PI/4/100);
+      ailes.position.set(-0.12,-0.10874014232747856,0);
+      //ailes.position.set(0,-0.10874014232747856,0);
+    }
+
+    if (helice1!=null){
+      helice1.position.set(0,0,0);
+      const rotMatrix = new THREE.Matrix4().makeRotationAxis( Vector3(0,1,0),  2*t);
+      helice1.setRotationFromMatrix(rotMatrix);
+      helice1.position.set(-0.052078769570014005,-0.09874014255099592,0.2817096448784984);
+
+    }
+
+
+    if (helice2!=null){
+      helice2.position.set(0,0,0);
+      const rotMatrix = new THREE.Matrix4().makeRotationAxis( Vector3(0,1,0),  2*t);
+      //console.log(pos);
+      //helice1.position.set(0,0,-0.2);
+      // helice1.position.set(0,0,0);
+      // helice1.setRotationFromAxisAngle(new THREE.Vector3(1,0,0),0);
+      // helice1.updateMatrix();
+      //helice1.rotateX(t*Math.PI/2000);
+      //helice1.position.set(0,0,0);
+      helice2.setRotationFromMatrix(rotMatrix);
+
+      // helice2.matrixAutoUpdate = true;
+      // var quaternion = new THREE.Quaternion();
+      // quaternion.setFromAxisAngle( new THREE.Vector3( 0.000409040819095052, -0.000584091813898754, 2.3891745472596716e-7 ), 0.9999997457611198 );
+      // helice2.matrix.setRotationFromQuaternion(quaternion);
+      // helice2.matrixAutoUpdate = false;
+      helice2.position.set(-0.04058011755784452,-0.09874014255099581,-0.27454928326753164);
+
     }
 
 
@@ -1020,6 +1148,11 @@ function initEmptyScene(sceneThreeJs) {
 
     window.addEventListener('resize', function(event){onResize(sceneThreeJs);}, false);
 
+    sceneThreeJs.clock=new THREE.Clock();
+
+    sceneThreeJs.arrAnimations= ['vol vertical','vol horizontal',];
+    sceneThreeJs.actualAnimation= 0;
+    sceneThreeJs.constr=false;
 
 
 
